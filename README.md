@@ -1,3 +1,9 @@
+Q2Sharp
+============
+![](https://img.shields.io/github/stars/optimus-code/Q2Sharp.svg) ![](https://img.shields.io/github/forks/optimus-code/Q2Sharp.svg) ![](https://img.shields.io/github/issues/optimus-code/Q2Sharp.svg) [![GitHub contributors](https://img.shields.io/github/contributors/optimus-code/Q2Sharp.svg)](https://GitHub.com/optimus-code/Q2Sharp/graphs/contributors/)
+
+An attempt to port Jake2 from Java to C#. This started as an automatic conversion (will need to re-add copyright notices) with the correction of over many errors. This still does not compile or run but it is not far off.
+
 Jake2 README
 ============
 
