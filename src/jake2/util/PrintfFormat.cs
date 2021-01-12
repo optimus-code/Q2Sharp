@@ -3,7 +3,7 @@ using System;
 using System.Collections;
 using System.Globalization;
 
-namespace Jake2.Util
+namespace Q2Sharp.Util
 {
 	public class PrintfFormat
 	{

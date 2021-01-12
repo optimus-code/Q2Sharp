@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Sys
+namespace Q2Sharp.Sys
 {
     public class HighPrecisionTimer : Timer
     {

@@ -3,3 +3,4 @@ packages/
 obj/
 \.vs/
 bin/
+/src/jake2/Q2Sharp.csproj.user

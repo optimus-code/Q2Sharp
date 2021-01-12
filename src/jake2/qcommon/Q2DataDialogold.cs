@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Qcommon
+namespace Q2Sharp.Qcommon
 {
     public class Q2DataDialog : JDialog
     {
@@ -27,7 +27,7 @@ namespace Jake2.Qcommon
             java.awt.GridBagConstraints gridBagConstraints;
             choosePanel = new JPanel();
             statusPanel = new JPanel();
-            status = new JLabel("initializing Jake2...");
+            status = new JLabel("initializing Q2Sharp...");
             jTextField1 = new JTextField();
             changeButton = new JButton();
             cancelButton = new JButton();

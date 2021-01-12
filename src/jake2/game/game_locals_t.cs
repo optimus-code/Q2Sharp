@@ -1,11 +1,11 @@
-using Jake2.Qcommon;
-using Jake2.Util;
+using Q2Sharp.Qcommon;
+using Q2Sharp.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Game
+namespace Q2Sharp.Game
 {
     public class game_locals_t
     {

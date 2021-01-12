@@ -1,8 +1,8 @@
-using Jake2.Game;
+using Q2Sharp.Game;
 using System;
 using System.Text;
 
-namespace Jake2.Qcommon
+namespace Q2Sharp.Qcommon
 {
 	public sealed class Cbuf
 	{

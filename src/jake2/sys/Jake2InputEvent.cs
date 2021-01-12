@@ -1,7 +1,7 @@
 using OpenTK.Windowing.Desktop;
 using System;
 
-namespace Jake2.Sys
+namespace Q2Sharp.Sys
 {
 	public enum InputEvent : Int32
 	{

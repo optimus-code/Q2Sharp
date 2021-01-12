@@ -1,12 +1,12 @@
 using J2N.IO;
-using Jake2.Game;
-using Jake2.Qcommon;
-using Jake2.Util;
+using Q2Sharp.Game;
+using Q2Sharp.Qcommon;
+using Q2Sharp.Util;
 using OpenTK.Audio.OpenAL;
 using Q2Sharp.util;
 using System;
 
-namespace Jake2.Sound.Joal
+namespace Q2Sharp.Sound.Joal
 {
 	public sealed class JOALSoundImpl : ISound
 	{

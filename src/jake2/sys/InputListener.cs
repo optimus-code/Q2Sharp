@@ -2,7 +2,7 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using System.Collections.Concurrent;
 
-namespace Jake2.Sys
+namespace Q2Sharp.Sys
 {
 	public sealed class InputListener
 	{

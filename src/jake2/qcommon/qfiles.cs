@@ -1,9 +1,9 @@
 using J2N.IO;
-using Jake2.Util;
+using Q2Sharp.Util;
 using System;
 using System.Text;
 
-namespace Jake2.Qcommon
+namespace Q2Sharp.Qcommon
 {
 	public class qfiles
 	{

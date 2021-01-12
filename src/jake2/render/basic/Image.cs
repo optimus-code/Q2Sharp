@@ -5,15 +5,15 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using J2N.IO;
-using Jake2.Client;
-using Jake2.Game;
-using Jake2.Qcommon;
-using Jake2.Util;
+using Q2Sharp.Client;
+using Q2Sharp.Game;
+using Q2Sharp.Qcommon;
+using Q2Sharp.Util;
 using OpenTK.Graphics.OpenGL;
 using Q2Sharp.util;
-using static Jake2.Qcommon.qfiles;
+using static Q2Sharp.Qcommon.qfiles;
 
-namespace Jake2.Render.Basic
+namespace Q2Sharp.Render.Basic
 {
     public abstract class Image : Main
     {

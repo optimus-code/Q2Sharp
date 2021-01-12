@@ -1,12 +1,12 @@
 using J2N.Text;
-using Jake2.Qcommon;
-using Jake2.Sys;
+using Q2Sharp.Qcommon;
+using Q2Sharp.Sys;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Client
+namespace Q2Sharp.Client
 {
     public class CL_view
     {

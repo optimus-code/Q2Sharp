@@ -1,10 +1,10 @@
-using Jake2.Util;
+using Q2Sharp.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Game.Monsters
+namespace Q2Sharp.Game.Monsters
 {
     public class M_Gladiator
     {

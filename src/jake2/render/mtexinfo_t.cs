@@ -1,7 +1,7 @@
-using Jake2.Util;
+using Q2Sharp.Util;
 using System;
 
-namespace Jake2.Render
+namespace Q2Sharp.Render
 {
 	public class mtexinfo_t
 	{

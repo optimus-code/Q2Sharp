@@ -1,8 +1,8 @@
 using J2N.Text;
-using Jake2.Client;
-using Jake2.Qcommon;
-using Jake2.Sys;
-using Jake2.Util;
+using Q2Sharp.Client;
+using Q2Sharp.Qcommon;
+using Q2Sharp.Sys;
+using Q2Sharp.Util;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -13,7 +13,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 
-namespace Jake2.Render.Opengl
+namespace Q2Sharp.Render.Opengl
 {
     public abstract class JoglDriver : IGLDriver
     {

@@ -1,6 +1,6 @@
-using Jake2.Client;
-using Jake2.Game;
-using Jake2.Render.Opengl;
+using Q2Sharp.Client;
+using Q2Sharp.Game;
+using Q2Sharp.Render.Opengl;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +8,7 @@ using System.Text;
 using OpenTK.Graphics.OpenGL;
 using System.Drawing;
 
-namespace Jake2.Render
+namespace Q2Sharp.Render
 {
     public abstract class Base : IRenderAPI
     {

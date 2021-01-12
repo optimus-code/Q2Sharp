@@ -1,10 +1,10 @@
-using Jake2.Qcommon;
+using Q2Sharp.Qcommon;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Sound
+namespace Q2Sharp.Sound
 {
     public class WaveLoader
     {

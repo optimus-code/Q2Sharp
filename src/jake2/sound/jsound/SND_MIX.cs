@@ -1,9 +1,9 @@
 using J2N.IO;
-using Jake2.Game;
-using Jake2.Util;
+using Q2Sharp.Game;
+using Q2Sharp.Util;
 using System;
 
-namespace Jake2.Sound.Jsound
+namespace Q2Sharp.Sound.Jsound
 {
 	public class SND_MIX : SND_JAVA
 	{

@@ -1,13 +1,13 @@
 using J2N.IO;
-using Jake2.Client;
-using Jake2.Game;
-using Jake2.Qcommon;
-using Jake2.Util;
+using Q2Sharp.Client;
+using Q2Sharp.Game;
+using Q2Sharp.Qcommon;
+using Q2Sharp.Util;
 using OpenTK.Graphics.OpenGL;
 using System;
 using System.Drawing;
 
-namespace Jake2.Render.Fast
+namespace Q2Sharp.Render.Fast
 {
 	public abstract class Main : Base
 	{

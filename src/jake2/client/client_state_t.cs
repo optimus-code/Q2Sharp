@@ -1,14 +1,14 @@
 using J2N.IO;
-using Jake2.Game;
-using Jake2.Render;
-using Jake2.Sound;
-using Jake2.Util;
+using Q2Sharp.Game;
+using Q2Sharp.Render;
+using Q2Sharp.Sound;
+using Q2Sharp.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Client
+namespace Q2Sharp.Client
 {
     public class client_state_t
     {

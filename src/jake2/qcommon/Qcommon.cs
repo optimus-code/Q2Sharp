@@ -1,8 +1,8 @@
-using Jake2.Client;
-using Jake2.Game;
-using Jake2.Server;
-using Jake2.Sys;
-using Jake2.Util;
+using Q2Sharp.Client;
+using Q2Sharp.Game;
+using Q2Sharp.Server;
+using Q2Sharp.Sys;
+using Q2Sharp.Util;
 using System;
 using System.IO;
 using System.Linq;
@@ -10,7 +10,7 @@ using System.Reflection;
 using System.Runtime.Versioning;
 using System.Text;
 
-namespace Jake2.Qcommon
+namespace Q2Sharp.Qcommon
 {
 	public sealed class Qcom : Globals
 	{

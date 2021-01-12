@@ -1,6 +1,6 @@
 using System;
 
-namespace Jake2.Sys
+namespace Q2Sharp.Sys
 {
 	public abstract class KBD
 	{

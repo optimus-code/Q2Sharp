@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using OpenTK.Graphics.OpenGL;
 
-namespace Jake2.Render.Opengl
+namespace Q2Sharp.Render.Opengl
 {
     public class Jsr231GL : IQGL
     {

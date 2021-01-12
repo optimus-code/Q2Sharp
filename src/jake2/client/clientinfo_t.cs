@@ -1,10 +1,10 @@
-using Jake2.Render;
+using Q2Sharp.Render;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Client
+namespace Q2Sharp.Client
 {
     public class clientinfo_t
     {

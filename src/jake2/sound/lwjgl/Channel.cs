@@ -1,15 +1,15 @@
 using J2N.IO;
-using Jake2.Client;
-using Jake2.Game;
-using Jake2.Qcommon;
-using Jake2.Util;
+using Q2Sharp.Client;
+using Q2Sharp.Game;
+using Q2Sharp.Qcommon;
+using Q2Sharp.Util;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Sound.Lwjgl
+namespace Q2Sharp.Sound.Lwjgl
 {
     public class Channel
     {

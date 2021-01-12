@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Sound.Jsound
+namespace Q2Sharp.Sound.Jsound
 {
     public class JSoundImpl : ISound
     {

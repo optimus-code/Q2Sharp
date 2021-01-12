@@ -1,12 +1,12 @@
 using J2N.IO;
 using J2N.Text;
-using Jake2.Qcommon;
+using Q2Sharp.Qcommon;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using System;
 using System.IO;
 using System.Text;
 
-namespace Jake2.Util
+namespace Q2Sharp.Util
 {
 	public static class Lib
 	{

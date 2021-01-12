@@ -1,10 +1,10 @@
-using Jake2.Client;
-using Jake2.Game;
-using Jake2.Qcommon;
-using Jake2.Util;
+using Q2Sharp.Client;
+using Q2Sharp.Game;
+using Q2Sharp.Qcommon;
+using Q2Sharp.Util;
 using System;
 
-namespace Jake2.Sys
+namespace Q2Sharp.Sys
 {
 	public sealed class IN : Globals
 	{

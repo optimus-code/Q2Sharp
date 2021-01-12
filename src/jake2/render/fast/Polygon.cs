@@ -1,11 +1,11 @@
 using J2N.IO;
-using Jake2.Util;
+using Q2Sharp.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Render.Fast
+namespace Q2Sharp.Render.Fast
 {
     public sealed class Polygon : glpoly_t
     {

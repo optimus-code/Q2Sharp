@@ -1,10 +1,10 @@
-using Jake2.Game;
+using Q2Sharp.Game;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Client
+namespace Q2Sharp.Client
 {
     public class centity_t
     {

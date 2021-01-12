@@ -1,9 +1,9 @@
-using Jake2.Game;
-using Jake2.Qcommon;
+using Q2Sharp.Game;
+using Q2Sharp.Qcommon;
 using System;
 using System.IO;
 
-namespace Jake2.Util
+namespace Q2Sharp.Util
 {
 	public class QuakeFile : IDisposable
 	{

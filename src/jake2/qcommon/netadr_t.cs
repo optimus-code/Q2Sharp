@@ -1,10 +1,10 @@
-using Jake2.Sys;
+using Q2Sharp.Sys;
 using System;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 
-namespace Jake2.Qcommon
+namespace Q2Sharp.Qcommon
 {
 	public class netadr_t
 	{

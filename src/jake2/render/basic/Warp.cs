@@ -1,12 +1,12 @@
-using Jake2.Util;
+using Q2Sharp.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using OpenTK.Graphics.OpenGL;
-using Jake2.Qcommon;
+using Q2Sharp.Qcommon;
 
-namespace Jake2.Render.Basic
+namespace Q2Sharp.Render.Basic
 {
     public abstract class Warp : Model
     {

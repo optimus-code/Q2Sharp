@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Render.Basic
+namespace Q2Sharp.Render.Basic
 {
     public sealed class Polygon : glpoly_t
     {

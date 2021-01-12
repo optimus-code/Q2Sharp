@@ -1,6 +1,6 @@
-using Jake2.Qcommon;
-using Jake2.Render;
-using Jake2.Sys;
+using Q2Sharp.Qcommon;
+using Q2Sharp.Render;
+using Q2Sharp.Sys;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using System;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Client
+namespace Q2Sharp.Client
 {
     public interface Irefexport_t
     {

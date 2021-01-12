@@ -1,4 +1,4 @@
-namespace Jake2.Game
+namespace Q2Sharp.Game
 {
 	public class GameItemList
 	{

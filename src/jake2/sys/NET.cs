@@ -1,8 +1,8 @@
 using J2N.IO;
 using J2N.Text;
-using Jake2.Game;
-using Jake2.Qcommon;
-using Jake2.Util;
+using Q2Sharp.Game;
+using Q2Sharp.Qcommon;
+using Q2Sharp.Util;
 using Q2Sharp.util;
 using System;
 using System.Collections.Generic;
@@ -12,7 +12,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 
-namespace Jake2.Sys
+namespace Q2Sharp.Sys
 {
     public sealed class NET
     {

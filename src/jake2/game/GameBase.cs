@@ -1,15 +1,15 @@
 using J2N.Text;
-using Jake2.Client;
-using Jake2.Qcommon;
-using Jake2.Server;
-using Jake2.Util;
+using Q2Sharp.Client;
+using Q2Sharp.Qcommon;
+using Q2Sharp.Server;
+using Q2Sharp.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using static Jake2.Game.pmove_t;
+using static Q2Sharp.Game.pmove_t;
 
-namespace Jake2.Game
+namespace Q2Sharp.Game
 {
     public class GameBase
     {

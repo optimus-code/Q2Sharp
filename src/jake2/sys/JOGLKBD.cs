@@ -1,11 +1,11 @@
-using Jake2.Client;
+using Q2Sharp.Client;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Common.Input;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using System;
 
-namespace Jake2.Sys
+namespace Q2Sharp.Sys
 {
 	public sealed class JOGLKBD : KBD
 	{

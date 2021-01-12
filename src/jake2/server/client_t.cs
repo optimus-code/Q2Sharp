@@ -1,11 +1,11 @@
-using Jake2.Game;
-using Jake2.Qcommon;
+using Q2Sharp.Game;
+using Q2Sharp.Qcommon;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Server
+namespace Q2Sharp.Server
 {
     public class client_t
     {

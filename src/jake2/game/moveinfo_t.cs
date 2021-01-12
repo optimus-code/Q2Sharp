@@ -1,6 +1,6 @@
-using Jake2.Util;
+using Q2Sharp.Util;
 
-namespace Jake2.Game
+namespace Q2Sharp.Game
 {
 	public class moveinfo_t
 	{

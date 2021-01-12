@@ -1,12 +1,12 @@
 using J2N.IO;
-using Jake2.Client;
-using Jake2.Qcommon;
-using Jake2.Util;
+using Q2Sharp.Client;
+using Q2Sharp.Qcommon;
+using Q2Sharp.Util;
 using OpenTK.Graphics.OpenGL;
 using Q2Sharp.util;
 using System;
 
-namespace Jake2.Render.Basic
+namespace Q2Sharp.Render.Basic
 {
 	public abstract class Mesh : Light
 	{

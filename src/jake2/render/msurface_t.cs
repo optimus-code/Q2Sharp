@@ -1,8 +1,8 @@
 using J2N.IO;
-using Jake2.Game;
+using Q2Sharp.Game;
 using System;
 
-namespace Jake2.Render
+namespace Q2Sharp.Render
 {
 	public class msurface_t
 	{

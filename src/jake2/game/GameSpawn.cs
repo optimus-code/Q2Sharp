@@ -1,11 +1,11 @@
 using J2N.Text;
-using Jake2.Game.Monsters;
-using Jake2.Qcommon;
-using Jake2.Util;
+using Q2Sharp.Game.Monsters;
+using Q2Sharp.Qcommon;
+using Q2Sharp.Util;
 using System;
-using static Jake2.Qcommon.Com;
+using static Q2Sharp.Qcommon.Com;
 
-namespace Jake2.Game
+namespace Q2Sharp.Game
 {
 	public class GameSpawn
 	{

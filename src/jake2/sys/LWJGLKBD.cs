@@ -1,12 +1,12 @@
-using Jake2.Client;
-using Jake2.Qcommon;
+using Q2Sharp.Client;
+using Q2Sharp.Qcommon;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Sys
+namespace Q2Sharp.Sys
 {
     public class LWJGLKBD : KBD
     {

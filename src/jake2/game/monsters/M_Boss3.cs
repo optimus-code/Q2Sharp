@@ -1,6 +1,6 @@
-using Jake2.Util;
+using Q2Sharp.Util;
 
-namespace Jake2.Game.Monsters
+namespace Q2Sharp.Game.Monsters
 {
 	public class M_Boss3
 	{

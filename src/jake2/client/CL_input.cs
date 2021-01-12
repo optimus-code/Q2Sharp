@@ -1,13 +1,13 @@
-using Jake2.Game;
-using Jake2.Qcommon;
-using Jake2.Sys;
-using Jake2.Util;
+using Q2Sharp.Game;
+using Q2Sharp.Qcommon;
+using Q2Sharp.Sys;
+using Q2Sharp.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Client
+namespace Q2Sharp.Client
 {
     public class CL_input
     {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Render
+namespace Q2Sharp.Render
 {
     public class glstate_t
     {

@@ -1,7 +1,7 @@
 using J2N.IO;
 using System;
 
-namespace Jake2
+namespace Q2Sharp
 {
 	public class Defines
 	{

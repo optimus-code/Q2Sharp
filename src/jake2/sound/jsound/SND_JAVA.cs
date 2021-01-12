@@ -1,5 +1,5 @@
-using Jake2.Game;
-using Jake2.Qcommon;
+using Q2Sharp.Game;
+using Q2Sharp.Qcommon;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using SharpAudio;
@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 
-namespace Jake2.Sound.Jsound
+namespace Q2Sharp.Sound.Jsound
 {
     public class SND_JAVA : Globals
     {

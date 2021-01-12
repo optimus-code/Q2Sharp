@@ -1,16 +1,16 @@
 using J2N.IO;
-using Jake2.Qcommon;
+using Q2Sharp.Qcommon;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using OpenTK.Audio.OpenAL;
 using System.Collections;
-using Jake2.Util;
-using Jake2.Game;
-using Jake2.Client;
+using Q2Sharp.Util;
+using Q2Sharp.Game;
+using Q2Sharp.Client;
 
-namespace Jake2.Sound.Joal
+namespace Q2Sharp.Sound.Joal
 {
     public class Channel
     {

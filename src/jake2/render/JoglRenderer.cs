@@ -1,11 +1,11 @@
-using Jake2.Client;
-using Jake2.Qcommon;
-using Jake2.Render.Opengl;
-using Jake2.Sys;
+using Q2Sharp.Client;
+using Q2Sharp.Qcommon;
+using Q2Sharp.Render.Opengl;
+using Q2Sharp.Sys;
 using System;
 using System.Drawing;
 
-namespace Jake2.Render
+namespace Q2Sharp.Render
 {
 	sealed class JoglRenderer : JoglDriver, Irefexport_t, IRef
 	{

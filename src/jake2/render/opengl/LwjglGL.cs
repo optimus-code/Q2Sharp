@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Render.Opengl
+namespace Q2Sharp.Render.Opengl
 {
     public class LwjglGL : IQGL
     {

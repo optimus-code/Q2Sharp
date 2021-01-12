@@ -1,11 +1,11 @@
 using J2N.IO;
-using Jake2.Game;
-using Jake2.Qcommon;
+using Q2Sharp.Game;
+using Q2Sharp.Qcommon;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Jake2.Sound
+namespace Q2Sharp.Sound
 {
 	public class S
 	{
@@ -16,7 +16,7 @@ namespace Jake2.Sound
 		{
 			//try
 			//{
-			//	Class.ForName( "jake2.sound.DummyDriver" );
+			//	Class.ForName( "Q2Sharp.sound.DummyDriver" );
 			//	UseDriver( "dummy" );
 			//}
 			//catch ( Exception e )
@@ -27,7 +27,7 @@ namespace Jake2.Sound
 			//try
 			//{
 			//	Class.ForName( "org.lwjgl.openal.AL" );
-			//	Class.ForName( "jake2.sound.lwjgl.LWJGLSoundImpl" );
+			//	Class.ForName( "Q2Sharp.sound.lwjgl.LWJGLSoundImpl" );
 			//}
 			//catch ( Exception e )
 			//{
@@ -37,7 +37,7 @@ namespace Jake2.Sound
 			//try
 			//{
 			//	Class.ForName( "net.java.games.joal.AL" );
-			//	Class.ForName( "jake2.sound.joal.JOALSoundImpl" );
+			//	Class.ForName( "Q2Sharp.sound.joal.JOALSoundImpl" );
 			//}
 			//catch ( Exception e )
 			//{

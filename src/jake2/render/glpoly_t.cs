@@ -1,10 +1,10 @@
-using Jake2.Util;
+using Q2Sharp.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Render
+namespace Q2Sharp.Render
 {
     public abstract class glpoly_t
     {

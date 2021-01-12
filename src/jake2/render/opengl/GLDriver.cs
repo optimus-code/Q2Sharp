@@ -1,4 +1,4 @@
-using Jake2.Qcommon;
+using Q2Sharp.Qcommon;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using System;
 using System.Collections.Generic;
@@ -6,7 +6,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Render.Opengl
+namespace Q2Sharp.Render.Opengl
 {
     public interface IGLDriver
     {

@@ -1,11 +1,11 @@
-using Jake2.Client;
-using Jake2.Sys;
+using Q2Sharp.Client;
+using Q2Sharp.Sys;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Render
+namespace Q2Sharp.Render
 {
     public class DebugCulling
     {

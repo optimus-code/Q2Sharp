@@ -1,10 +1,10 @@
-using Jake2.Client;
+using Q2Sharp.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Render
+namespace Q2Sharp.Render
 {
     public interface IRef
     {

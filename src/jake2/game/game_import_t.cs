@@ -1,12 +1,12 @@
-using Jake2.Qcommon;
-using Jake2.Server;
+using Q2Sharp.Qcommon;
+using Q2Sharp.Server;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using static Jake2.Game.pmove_t;
+using static Q2Sharp.Game.pmove_t;
 
-namespace Jake2.Game
+namespace Q2Sharp.Game
 {
     public class game_import_t
     {

@@ -1,9 +1,9 @@
-using Jake2.Qcommon;
-using Jake2.Sys;
+using Q2Sharp.Qcommon;
+using Q2Sharp.Sys;
 using Q2Sharp.win;
 using System;
 
-namespace Jake2
+namespace Q2Sharp
 {
 	public sealed class Program
 	{

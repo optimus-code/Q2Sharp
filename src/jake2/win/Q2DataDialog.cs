@@ -1,4 +1,4 @@
-﻿using Jake2.Qcommon;
+﻿using Q2Sharp.Qcommon;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

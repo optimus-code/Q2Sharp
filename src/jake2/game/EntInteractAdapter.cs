@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Game
+namespace Q2Sharp.Game
 {
     public abstract class EntInteractAdapter : SuperAdapter
     {

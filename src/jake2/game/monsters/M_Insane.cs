@@ -1,7 +1,7 @@
-using Jake2.Util;
+using Q2Sharp.Util;
 using System;
 
-namespace Jake2.Game.Monsters
+namespace Q2Sharp.Game.Monsters
 {
 	public class M_Insane
 	{

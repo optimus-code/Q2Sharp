@@ -1,17 +1,17 @@
-using Jake2.Client;
-using Jake2.Qcommon;
+using Q2Sharp.Client;
+using Q2Sharp.Qcommon;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using OpenTK.Graphics.OpenGL;
-using Jake2.Util;
+using Q2Sharp.Util;
 using J2N.Text;
 using System.IO;
 using J2N.IO;
 using System.Drawing;
 
-namespace Jake2.Render.Basic
+namespace Q2Sharp.Render.Basic
 {
     public sealed class Misc : Mesh
     {

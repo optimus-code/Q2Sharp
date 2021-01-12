@@ -1,9 +1,9 @@
-using Jake2.Game;
-using Jake2.Server;
-using Jake2.Util;
+using Q2Sharp.Game;
+using Q2Sharp.Server;
+using Q2Sharp.Util;
 using System;
 
-namespace Jake2.Qcommon
+namespace Q2Sharp.Qcommon
 {
 	public class PMove
 	{

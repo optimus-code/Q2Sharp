@@ -1,7 +1,7 @@
 using J2N.Text;
-using Jake2.Client;
-using Jake2.Qcommon;
-using Jake2.Util;
+using Q2Sharp.Client;
+using Q2Sharp.Qcommon;
+using Q2Sharp.Util;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Jake2.Sys
+namespace Q2Sharp.Sys
 {
     public sealed class CoreSys : Defines
     {

@@ -1,11 +1,11 @@
 using J2N.IO;
-using Jake2.Game;
-using Jake2.Util;
+using Q2Sharp.Game;
+using Q2Sharp.Util;
 using System;
 using System.Text;
-using static Jake2.Qcommon.qfiles;
+using static Q2Sharp.Qcommon.qfiles;
 
-namespace Jake2.Qcommon
+namespace Q2Sharp.Qcommon
 {
 	public class CM
 	{

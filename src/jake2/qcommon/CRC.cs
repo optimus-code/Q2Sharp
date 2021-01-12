@@ -1,6 +1,6 @@
 using System;
 
-namespace Jake2.Qcommon
+namespace Q2Sharp.Qcommon
 {
 	public class CRC
 	{

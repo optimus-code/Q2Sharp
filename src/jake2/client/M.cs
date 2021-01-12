@@ -1,12 +1,12 @@
-using Jake2.Game;
-using Jake2.Server;
-using Jake2.Util;
+using Q2Sharp.Game;
+using Q2Sharp.Server;
+using Q2Sharp.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Client
+namespace Q2Sharp.Client
 {
     public sealed class M
     {

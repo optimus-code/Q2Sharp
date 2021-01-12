@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Sys
+namespace Q2Sharp.Sys
 {
     public class StandardTimer : Timer
     {

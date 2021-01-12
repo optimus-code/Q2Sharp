@@ -1,7 +1,7 @@
 using J2N.IO;
 using J2N.Text;
-using Jake2.Game;
-using Jake2.Sys;
+using Q2Sharp.Game;
+using Q2Sharp.Sys;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,7 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Qcommon
+namespace Q2Sharp.Qcommon
 {
 	public sealed class FS : Globals
 	{

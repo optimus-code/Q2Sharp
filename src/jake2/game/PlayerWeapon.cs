@@ -1,8 +1,8 @@
-using Jake2.Game.Monsters;
-using Jake2.Util;
+using Q2Sharp.Game.Monsters;
+using Q2Sharp.Util;
 using System;
 
-namespace Jake2.Game
+namespace Q2Sharp.Game
 {
 	public class PlayerWeapon
 	{

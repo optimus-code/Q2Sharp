@@ -1,7 +1,7 @@
-using Jake2.Util;
+using Q2Sharp.Util;
 using System;
 
-namespace Jake2.Qcommon
+namespace Q2Sharp.Qcommon
 {
 	public sealed class sizebuf_t
 	{

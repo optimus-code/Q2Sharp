@@ -1,7 +1,7 @@
 using J2N.IO;
 using System;
 
-namespace Jake2.Render
+namespace Q2Sharp.Render
 {
 	public class medge_t
 	{

@@ -1,11 +1,11 @@
 using J2N.Text;
-using Jake2.Qcommon;
+using Q2Sharp.Qcommon;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Jake2.Game
+namespace Q2Sharp.Game
 {
     public class Info
     {
