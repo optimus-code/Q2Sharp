@@ -1,31 +1,25 @@
-package jake2.render.opengl;
+using Jake2.Qcommon;
+using OpenTK.Windowing.GraphicsLibraryFramework;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Text;
 
-import jake2.qcommon.xcommand_t;
-
-import java.awt.Dimension;
-
-public interface GLDriver {
-    
-    boolean init(int xpos, int ypos);
-    
-    int setMode(Dimension dim, int mode, boolean fullscreen);
-    
-    void shutdown();
-    
-    void beginFrame(float camera_separation);
-    
-    void endFrame();
-
-    void appActivate(boolean activate);
-    
-    void enableLogging(boolean enable);
-    
-    void logNewFrame();
-    
-    java.awt.DisplayMode[] getModeList();
-
-    void updateScreen(xcommand_t callback);
-
-    void screenshot();
-    
+namespace Jake2.Render.Opengl
+{
+    public interface IGLDriver
+    {
+        bool Init(int xpos, int ypos);
+        int SetMode(Size dim, int mode, bool fullscreen);
+        void Shutdown();
+        void BeginFrame(float camera_separation);
+        void EndFrame();
+        void AppActivate(bool activate);
+        void EnableLogging(bool enable);
+        void LogNewFrame();
+        VideoMode[] GetModeList();
+        void UpdateScreen(xcommand_t callback);
+        void Screenshot();
+    }
 }

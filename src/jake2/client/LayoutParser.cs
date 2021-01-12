@@ -1,236 +1,269 @@
-/*
- * LayoutParser.java
- * Copyright (C) 2003
- */
-/*
- Copyright (C) 1997-2001 Id Software, Inc.
+using Jake2.Qcommon;
+using Jake2.Util;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
- This program is free software; you can redistribute it and/or
- modify it under the terms of the GNU General Public License
- as published by the Free Software Foundation; either version 2
- of the License, or (at your option) any later version.
+namespace Jake2.Client
+{
+    sealed class LayoutParser
+    {
+        int tokenPos;
+        int tokenLength;
+        int index;
+        int length;
+        string data;
+        public LayoutParser()
+        {
+            Init(null);
+        }
 
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        public void Init(string layout)
+        {
+            tokenPos = 0;
+            tokenLength = 0;
+            index = 0;
+            data = (layout != null) ? layout : "";
+            length = (layout != null) ? layout.Length : 0;
+        }
 
- See the GNU General Public License for more details.
+        public bool HasNext()
+        {
+            return !IsEof();
+        }
 
- You should have received a copy of the GNU General Public License
- along with this program; if not, write to the Free Software
- Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+        public void Next()
+        {
+            if (data == null)
+            {
+                tokenLength = 0;
+                return;
+            }
 
- */
-package jake2.client;
+            while (true)
+            {
+                Skipwhites();
+                if (IsEof())
+                {
+                    tokenLength = 0;
+                    return;
+                }
 
-import jake2.Defines;
-import jake2.qcommon.Com;
+                if (Getchar() == '/')
+                {
+                    if (Nextchar() == '/')
+                    {
+                        Skiptoeol();
+                        continue;
+                    }
+                    else
+                    {
+                        Prevchar();
+                        break;
+                    }
+                }
+                else
+                    break;
+            }
 
-final class LayoutParser {
-    int tokenPos;
+            int c;
+            int len = 0;
+            if (Getchar() == '\\')
+            {
+                Nextchar();
+                tokenPos = index;
+                while (true)
+                {
+                    c = Getchar();
+                    Nextchar();
+                    if (c == '\\' || c == 0)
+                    {
+                        tokenLength = len;
+                        return;
+                    }
 
-    int tokenLength;
+                    if (len < Defines.MAX_TOKEN_CHARS)
+                    {
+                        ++len;
+                    }
+                }
+            }
 
-    int index;
+            c = Getchar();
+            tokenPos = index;
+            do
+            {
+                if (len < Defines.MAX_TOKEN_CHARS)
+                {
+                    ++len;
+                }
 
-    int length;
+                c = Nextchar();
+            }
+            while (c > 32);
+            if (len == Defines.MAX_TOKEN_CHARS)
+            {
+                Com.Printf("Token exceeded " + Defines.MAX_TOKEN_CHARS + " chars, discarded.\\n");
+                len = 0;
+            }
 
-    String data;
+            tokenLength = len;
+            return;
+        }
 
-    LayoutParser() {
-	init(null);
-    }
+        public bool TokenEquals(string other)
+        {
+            if (tokenLength != other.Length)
+                return false;
+            return data.RegionMatches(tokenPos, other, 0, tokenLength);
+        }
 
-    public void init(String layout) {
-	tokenPos = 0;
-	tokenLength = 0;
-	index = 0;
-	data = (layout != null) ? layout : "";
-	length = (layout != null) ? layout.length() : 0;
-    }
+        public int TokenAsInt()
+        {
+            if (tokenLength == 0)
+                return 0;
+            return Atoi();
+        }
 
-    public boolean hasNext() {
-	return !isEof();
-    }
+        public string Token()
+        {
+            if (tokenLength == 0)
+                return "";
+            return data.Substring(tokenPos, tokenPos + tokenLength);
+        }
 
-    public void next() {
-	if (data == null) {
-	    tokenLength = 0;
-	    return;
-	}
+        private int Atoi()
+        {
+            int result = 0;
+            bool negative = false;
+            int i = 0, max = tokenLength;
+            string s = data;
+            int limit;
+            int multmin;
+            int digit;
+            if (max > 0)
+            {
+                if (s[tokenPos] == '-')
+                {
+                    negative = true;
+                    limit = int.MinValue;
+                    i++;
+                }
+                else
+                {
+                    limit = -int.MaxValue;
+                }
 
-	while (true) {
-	    // skip whitespace
-	    skipwhites();
-	    if (isEof()) {
-		tokenLength = 0;
-		return;
-	    }
+                multmin = limit / 10;
+                if (i < max)
+                {
+                    digit = Lib.Digit(s[tokenPos + i++], 10);
+                    if (digit < 0)
+                    {
+                        return 0;
+                    }
+                    else
+                    {
+                        result = -digit;
+                    }
+                }
 
-	    // skip // comments
-	    if (getchar() == '/') {
-		if (nextchar() == '/') {
-		    skiptoeol();
-		    // goto skip whitespace
-		    continue;
-		} else {
-		    prevchar();
-		    break;
-		}
-	    } else
-		break;
-	}
+                while (i < max)
+                {
+                    digit = Lib.Digit(s[tokenPos + i++], 10);
+                    if (digit < 0)
+                    {
+                        return 0;
+                    }
 
-	int c;
-	int len = 0;
-	// handle quoted strings specially
-	if (getchar() == '\"') {
-	    nextchar();
-	    tokenPos = index;
-	    while (true) {
-		c = getchar();
-		nextchar();
-		if (c == '\"' || c == 0) {
-		    tokenLength = len;
-		    return;
-		}
-		if (len < Defines.MAX_TOKEN_CHARS) {
-		    ++len;
-		}
-	    }
-	}
+                    if (result < multmin)
+                    {
+                        return 0;
+                    }
 
-	// parse a regular word
-	c = getchar();
-	tokenPos = index;
-	do {
-	    if (len < Defines.MAX_TOKEN_CHARS) {
-		++len;
-	    }
-	    c = nextchar();
-	} while (c > 32);
+                    result *= 10;
+                    if (result < limit + digit)
+                    {
+                        return 0;
+                    }
 
-	if (len == Defines.MAX_TOKEN_CHARS) {
-	    Com.Printf("Token exceeded " + Defines.MAX_TOKEN_CHARS
-		    + " chars, discarded.\n");
-	    len = 0;
-	}
+                    result -= digit;
+                }
+            }
+            else
+            {
+                return 0;
+            }
 
-	tokenLength = len;
-	return;
-    }
+            if (negative)
+            {
+                if (i > 1)
+                {
+                    return result;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+            else
+            {
+                return -result;
+            }
+        }
 
-    public boolean tokenEquals(String other) {
-	if (tokenLength != other.length())
-	    return false;
-	return data.regionMatches(tokenPos, other, 0, tokenLength);
-    }
+        private char Getchar()
+        {
+            if (index < length)
+            {
+                return data[index];
+            }
 
-    public int tokenAsInt() {
-	if (tokenLength == 0)
-	    return 0;
-	return atoi();
-    }
+            return (char)0;
+        }
 
-    public String token() {
-	if (tokenLength == 0)
-	    return "";
-	return data.substring(tokenPos, tokenPos + tokenLength);
-    }
+        private char Nextchar()
+        {
+            ++index;
+            if (index < length)
+            {
+                return data[index];
+            }
 
-    private int atoi() {
-	int result = 0;
-	boolean negative = false;
-	int i = 0, max = tokenLength;
-	String s = data;
-	int limit;
-	int multmin;
-	int digit;
+            return (char)0;
+        }
 
-	if (max > 0) {
-	    if (s.charAt(tokenPos) == '-') {
-		negative = true;
-		limit = Integer.MIN_VALUE;
-		i++;
-	    } else {
-		limit = -Integer.MAX_VALUE;
-	    }
-	    multmin = limit / 10;
-	    if (i < max) {
-		digit = Character.digit(s.charAt(tokenPos + i++), 10);
-		if (digit < 0) {
-		    return 0; // wrong format
-		} else {
-		    result = -digit;
-		}
-	    }
-	    while (i < max) {
-		// Accumulating negatively avoids surprises near MAX_VALUE
-		digit = Character.digit(s.charAt(tokenPos + i++), 10);
-		if (digit < 0) {
-		    return 0; // wrong format
-		}
-		if (result < multmin) {
-		    return 0; // wrong format
-		}
-		result *= 10;
-		if (result < limit + digit) {
-		    return 0; // wrong format
-		}
-		result -= digit;
-	    }
-	} else {
-	    return 0; // wrong format
-	}
-	if (negative) {
-	    if (i > 1) {
-		return result;
-	    } else { /* Only got "-" */
-		return 0; // wrong format
-	    }
-	} else {
-	    return -result;
-	}
-    }
+        private char Prevchar()
+        {
+            if (index > 0)
+            {
+                --index;
+                return data[index];
+            }
 
-    private char getchar() {
-	if (index < length) {
-	    return data.charAt(index);
-	}
-	return 0;
-    }
+            return (char)0;
+        }
 
-    private char nextchar() {
-	++index;
-	if (index < length) {
-	    return data.charAt(index);
-	}
-	return 0;
-    }
+        private bool IsEof()
+        {
+            return index >= length;
+        }
 
-    private char prevchar() {
-	if (index > 0) {
-	    --index;
-	    return data.charAt(index);
-	}
-	return 0;
-    }
+        private char Skipwhites()
+        {
+            char c = (char)0;
+            while (index < length && ((c = data[index]) <= ' ') && c != 0)
+                ++index;
+            return c;
+        }
 
-    private boolean isEof() {
-	return index >= length;
-    }
-
-    private char skipwhites() {
-	char c = 0;
-	while (index < length && ((c = data.charAt(index)) <= ' ') && c != 0)
-	    ++index;
-	return c;
-    }
-
-    private char skiptoeol() {
-	char c = 0;
-	while (index < length && (c = data.charAt(index)) != '\n' && c != 0)
-	    ++index;
-	return c;
+        private char Skiptoeol()
+        {
+            char c = (char)0;
+            while (index < length && (c = data[index]) != '\\' && c != 0)
+                ++index;
+            return c;
+        }
     }
 }

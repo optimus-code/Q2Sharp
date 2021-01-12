@@ -1,407 +1,277 @@
-/*
- * Draw.java
- * Copyright (C) 2003
- *
- * $Id: Draw.java,v 1.4 2008-03-02 14:56:23 cawe Exp $
- */ 
- /*
-Copyright (C) 1997-2001 Id Software, Inc.
+using J2N.IO;
+using Jake2.Client;
+using Jake2.Qcommon;
+using Jake2.Util;
+using OpenTK.Graphics.OpenGL;
+using Q2Sharp.util;
+using System;
+using System.Drawing;
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-*/
-package jake2.render.fast;
-
-import jake2.Defines;
-import jake2.client.VID;
-import jake2.qcommon.Com;
-import jake2.render.image_t;
-import jake2.util.Lib;
-
-import java.awt.Dimension;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-
-/**
- * Draw
- * (gl_draw.c)
- * 
- * @author cwei
- */
-public abstract class Draw extends Image {
-
-	/*
-	===============
-	Draw_InitLocal
-	===============
-	*/
-	void Draw_InitLocal() {
-		// load console characters (don't bilerp characters)
-		draw_chars = GL_FindImage("pics/conchars.pcx", it_pic);
-		GL_Bind(draw_chars.texnum);
-		gl.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		gl.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	}
-
-	/*
-	================
-	Draw_Char
-
-	Draws one 8*8 graphics character with 0 being transparent.
-	It can be clipped to the top of the screen to allow the console to be
-	smoothly scrolled off.
-	================
-	*/
-	public void Draw_Char(int x, int y, int num) {
-
-		num &= 255;
-	
-		if ( (num&127) == 32 ) return; // space
-
-		if (y <= -8) return; // totally off screen
-
-		int row = num>>4;
-		int col = num&15;
-
-		float frow = row*0.0625f;
-		float fcol = col*0.0625f;
-		float size = 0.0625f;
-
-		GL_Bind(draw_chars.texnum);
-
-		gl.glBegin (GL_QUADS);
-		gl.glTexCoord2f (fcol, frow);
-		gl.glVertex2f (x, y);
-		gl.glTexCoord2f (fcol + size, frow);
-		gl.glVertex2f (x+8, y);
-		gl.glTexCoord2f (fcol + size, frow + size);
-		gl.glVertex2f (x+8, y+8);
-		gl.glTexCoord2f (fcol, frow + size);
-		gl.glVertex2f (x, y+8);
-		gl.glEnd ();
-	}
-
-
-	/*
-	=============
-	Draw_FindPic
-	=============
-	*/
-	public image_t Draw_FindPic(String name) {
-		if (!name.startsWith("/") && !name.startsWith("\\"))
-		{
-			return GL_FindImage(name, it_pic);
-		} else {
-			return GL_FindImage(name.substring(1), it_pic);
-		}
-	}
-
-
-	/*
-	=============
-	Draw_GetPicSize
-	=============
-	*/
-	public void Draw_GetPicSize(Dimension dim, String pic)	{
-
-		image_t image = Draw_FindPic(pic);
-		dim.width = (image != null) ? image.width : -1;
-		dim.height = (image != null) ? image.height : -1;
-	}
-
-	/*
-	=============
-	Draw_StretchPic
-	=============
-	*/
-	public void Draw_StretchPic (int x, int y, int w, int h, String pic) {
-		
-		image_t image;
-
-		image = Draw_FindPic(pic);
-		if (image == null)
-		{
-			VID.Printf (Defines.PRINT_ALL, "Can't find pic: " + pic +'\n');
-			return;
-		}
-
-		if (scrap_dirty)
-			Scrap_Upload();
-
-		if ( ( ( gl_config.renderer == GL_RENDERER_MCD ) || ( (gl_config.renderer & GL_RENDERER_RENDITION) != 0) ) && !image.has_alpha)
-			gl.glDisable(GL_ALPHA_TEST);
-
-		GL_Bind(image.texnum);
-		gl.glBegin (GL_QUADS);
-		gl.glTexCoord2f (image.sl, image.tl);
-		gl.glVertex2f (x, y);
-		gl.glTexCoord2f (image.sh, image.tl);
-		gl.glVertex2f (x+w, y);
-		gl.glTexCoord2f (image.sh, image.th);
-		gl.glVertex2f (x+w, y+h);
-		gl.glTexCoord2f (image.sl, image.th);
-		gl.glVertex2f (x, y+h);
-		gl.glEnd ();
-
-		if ( ( ( gl_config.renderer == GL_RENDERER_MCD ) || ( (gl_config.renderer & GL_RENDERER_RENDITION) !=0 ) ) && !image.has_alpha)
-			gl.glEnable(GL_ALPHA_TEST);
-	}
-
-
-	/*
-	=============
-	Draw_Pic
-	=============
-	*/
-	public void Draw_Pic(int x, int y, String pic)
+namespace Jake2.Render.Fast
+{
+	public abstract class Draw : Image
 	{
-		image_t image;
-
-		image = Draw_FindPic(pic);
-		if (image == null)
+		public override void Draw_InitLocal( )
 		{
-			VID.Printf(Defines.PRINT_ALL, "Can't find pic: " +pic + '\n');
-			return;
-		}
-		if (scrap_dirty)
-			Scrap_Upload();
-
-		if ( ( ( gl_config.renderer == GL_RENDERER_MCD ) || ( (gl_config.renderer & GL_RENDERER_RENDITION) != 0 ) ) && !image.has_alpha)
-			gl.glDisable (GL_ALPHA_TEST);
-
-		GL_Bind(image.texnum);
-
-		gl.glBegin (GL_QUADS);
-		gl.glTexCoord2f (image.sl, image.tl);
-		gl.glVertex2f (x, y);
-		gl.glTexCoord2f (image.sh, image.tl);
-		gl.glVertex2f (x+image.width, y);
-		gl.glTexCoord2f (image.sh, image.th);
-		gl.glVertex2f (x+image.width, y+image.height);
-		gl.glTexCoord2f (image.sl, image.th);
-		gl.glVertex2f (x, y+image.height);
-		gl.glEnd ();
-
-		if ( ( ( gl_config.renderer == GL_RENDERER_MCD ) || ( (gl_config.renderer & GL_RENDERER_RENDITION) != 0 ) )  && !image.has_alpha)
-			gl.glEnable (GL_ALPHA_TEST);
-	}
-
-	/*
-	=============
-	Draw_TileClear
-
-	This repeats a 64*64 tile graphic to fill the screen around a sized down
-	refresh window.
-	=============
-	*/
-	public void Draw_TileClear(int x, int y, int w, int h, String pic) {
-		image_t	image;
-
-		image = Draw_FindPic(pic);
-		if (image == null)
-		{
-			VID.Printf(Defines.PRINT_ALL, "Can't find pic: " + pic + '\n');
-			return;
+			draw_chars = GL_FindImage( "pics/conchars.pcx", it_pic );
+			GL_Bind( draw_chars.texnum );
+			GL.TexParameter( TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, ( Int32 ) All.Nearest );
+			GL.TexParameter( TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, ( Int32 ) All.Nearest );
 		}
 
-		if ( ( ( gl_config.renderer == GL_RENDERER_MCD ) || ( (gl_config.renderer & GL_RENDERER_RENDITION) != 0 ) )  && !image.has_alpha)
-			gl.glDisable(GL_ALPHA_TEST);
-
-		GL_Bind(image.texnum);
-		gl.glBegin (GL_QUADS);
-		gl.glTexCoord2f(x/64.0f, y/64.0f);
-		gl.glVertex2f (x, y);
-		gl.glTexCoord2f( (x+w)/64.0f, y/64.0f);
-		gl.glVertex2f(x+w, y);
-		gl.glTexCoord2f( (x+w)/64.0f, (y+h)/64.0f);
-		gl.glVertex2f(x+w, y+h);
-		gl.glTexCoord2f( x/64.0f, (y+h)/64.0f );
-		gl.glVertex2f (x, y+h);
-		gl.glEnd ();
-
-		if ( ( ( gl_config.renderer == GL_RENDERER_MCD ) || ( (gl_config.renderer & GL_RENDERER_RENDITION) != 0 ) )  && !image.has_alpha)
-			gl.glEnable(GL_ALPHA_TEST);
-	}
-
-
-	/*
-	=============
-	Draw_Fill
-
-	Fills a box of pixels with a single color
-	=============
-	*/
-	public void Draw_Fill(int x, int y, int w, int h, int colorIndex)	{
-
-		if ( colorIndex > 255)
-			Com.Error(Defines.ERR_FATAL, "Draw_Fill: bad color");
-
-		gl.glDisable(GL_TEXTURE_2D);
-
-		int color = d_8to24table[colorIndex]; 
-
-		gl.glColor3ub(
-			(byte)((color >> 0) & 0xff), // r
-			(byte)((color >> 8) & 0xff), // g
-			(byte)((color >> 16) & 0xff) // b
-		);
-
-		gl.glBegin (GL_QUADS);
-
-		gl.glVertex2f(x,y);
-		gl.glVertex2f(x+w, y);
-		gl.glVertex2f(x+w, y+h);
-		gl.glVertex2f(x, y+h);
-
-		gl.glEnd();
-		gl.glColor3f(1,1,1);
-		gl.glEnable(GL_TEXTURE_2D);
-	}
-
-	//=============================================================================
-
-	/*
-	================
-	Draw_FadeScreen
-	================
-	*/
-	public void Draw_FadeScreen()	{
-		gl.glEnable(GL_BLEND);
-		gl.glDisable(GL_TEXTURE_2D);
-		gl.glColor4f(0, 0, 0, 0.8f);
-		gl.glBegin(GL_QUADS);
-
-		gl.glVertex2f(0,0);
-		gl.glVertex2f(vid.getWidth(), 0);
-		gl.glVertex2f(vid.getWidth(), vid.getHeight());
-		gl.glVertex2f(0, vid.getHeight());
-
-		gl.glEnd();
-		gl.glColor4f(1,1,1,1);
-		gl.glEnable(GL_TEXTURE_2D);
-		gl.glDisable(GL_BLEND);
-	}
-
-// ====================================================================
-
-	IntBuffer image32=Lib.newIntBuffer(256*256);
-	ByteBuffer image8=Lib.newByteBuffer(256*256);
-	
-
-	/*
-	=============
-	Draw_StretchRaw
-	=============
-	*/
-	public void Draw_StretchRaw (int x, int y, int w, int h, int cols, int rows, byte[] data)
-	{
-		int i, j, trows;
-		int sourceIndex;
-		int frac, fracstep;
-		float hscale;
-		int row;
-		float t;
-
-		GL_Bind(0);
-
-		if (rows<=256)
+		public override void Draw_Char( Int32 x, Int32 y, Int32 num )
 		{
-			hscale = 1;
-			trows = rows;
+			num &= 255;
+			if ( ( num & 127 ) == 32 )
+				return;
+			if ( y <= -8 )
+				return;
+			var row = num >> 4;
+			var col = num & 15;
+			var frow = row * 0.0625F;
+			var fcol = col * 0.0625F;
+			var size = 0.0625F;
+			GL_Bind( draw_chars.texnum );
+			GL.Begin( PrimitiveType.Quads );
+			GL.TexCoord2( fcol, frow );
+			GL.Vertex2( x, y );
+			GL.TexCoord2( fcol + size, frow );
+			GL.Vertex2( x + 8, y );
+			GL.TexCoord2( fcol + size, frow + size );
+			GL.Vertex2( x + 8, y + 8 );
+			GL.TexCoord2( fcol, frow + size );
+			GL.Vertex2( x, y + 8 );
+			GL.End();
 		}
-		else
-		{
-			hscale = rows/256.0f;
-			trows = 256;
-		}
-		t = rows*hscale / 256;
 
-		if ( !qglColorTableEXT )
+		public override image_t Draw_FindPic( String name )
 		{
-			//int[] image32 = new int[256*256];
-			image32.clear();
-			int destIndex = 0;
-
-			for (i=0 ; i<trows ; i++)
+			if ( !name.StartsWith( "/" ) && !name.StartsWith( "\\\\" ) )
 			{
-				row = (int)(i*hscale);
-				if (row > rows)
-					break;
-				sourceIndex = cols*row;
-				destIndex = i*256;
-				fracstep = cols*0x10000/256;
-				frac = fracstep >> 1;
-				for (j=0 ; j<256 ; j++)
-				{
-					image32.put(destIndex + j, r_rawpalette[data[sourceIndex + (frac>>16)] & 0xff]);
-					frac += fracstep;
-				}
+				return GL_FindImage( name, it_pic );
 			}
-			gl.glTexImage2D (GL_TEXTURE_2D, 0, gl_tex_solid_format, 256, 256, 0, GL_RGBA, GL_UNSIGNED_BYTE, image32);
-		}
-		else
-		{
-			//byte[] image8 = new byte[256*256];
-			image8.clear();
-			int destIndex = 0;;
-
-			for (i=0 ; i<trows ; i++)
+			else
 			{
-				row = (int)(i*hscale);
-				if (row > rows)
-					break;
-				sourceIndex = cols*row;
-				destIndex = i*256;
-				fracstep = cols*0x10000/256;
-				frac = fracstep >> 1;
-				for (j=0 ; j<256 ; j++)
-				{
-					image8.put(destIndex  + j, data[sourceIndex + (frac>>16)]);
-					frac += fracstep;
-				}
+				return GL_FindImage( name.Substring( 1 ), it_pic );
+			}
+		}
+
+		public override void Draw_GetPicSize( out Size dim, String pic )
+		{
+			image_t image = Draw_FindPic( pic );
+			dim = new Size();
+			dim.Width = ( image != null ) ? image.width : -1;
+			dim.Height = ( image != null ) ? image.height : -1;
+		}
+
+		public override void Draw_StretchPic( Int32 x, Int32 y, Int32 w, Int32 h, String pic )
+		{
+			image_t image;
+			image = Draw_FindPic( pic );
+			if ( image == null )
+			{
+				VID.Printf( Defines.PRINT_ALL, "Can't find pic: " + pic + '\\' );
+				return;
 			}
 
-			gl.glTexImage2D( GL_TEXTURE_2D, 
-						   0, 
-						   GL_COLOR_INDEX8_EXT, 
-						   256, 256, 
-						   0, 
-						   GL_COLOR_INDEX, 
-						   GL_UNSIGNED_BYTE, 
-						   image8 );
+			if ( scrap_dirty )
+				Scrap_Upload();
+			if ( ( ( gl_config.renderer == GL_RENDERER_MCD ) || ( ( gl_config.renderer & GL_RENDERER_RENDITION ) != 0 ) ) && !image.has_alpha )
+				GL.Disable( EnableCap.AlphaTest );
+			GL_Bind( image.texnum );
+			GL.Begin( PrimitiveType.Quads );
+			GL.TexCoord2( image.sl, image.tl );
+			GL.Vertex2( x, y );
+			GL.TexCoord2( image.sh, image.tl );
+			GL.Vertex2( x + w, y );
+			GL.TexCoord2( image.sh, image.th );
+			GL.Vertex2( x + w, y + h );
+			GL.TexCoord2( image.sl, image.th );
+			GL.Vertex2( x, y + h );
+			GL.End();
+			if ( ( ( gl_config.renderer == GL_RENDERER_MCD ) || ( ( gl_config.renderer & GL_RENDERER_RENDITION ) != 0 ) ) && !image.has_alpha )
+				GL.Enable( EnableCap.AlphaTest );
 		}
-		gl.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		gl.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-		if ( ( gl_config.renderer == GL_RENDERER_MCD ) || ( (gl_config.renderer & GL_RENDERER_RENDITION) != 0 ) ) 
-			gl.glDisable (GL_ALPHA_TEST);
+		public override void Draw_Pic( Int32 x, Int32 y, String pic )
+		{
+			image_t image;
+			image = Draw_FindPic( pic );
+			if ( image == null )
+			{
+				VID.Printf( Defines.PRINT_ALL, "Can't find pic: " + pic + '\\' );
+				return;
+			}
 
-		gl.glBegin (GL_QUADS);
-		gl.glTexCoord2f (0, 0);
-		gl.glVertex2f (x, y);
-		gl.glTexCoord2f (1, 0);
-		gl.glVertex2f (x+w, y);
-		gl.glTexCoord2f (1, t);
-		gl.glVertex2f (x+w, y+h);
-		gl.glTexCoord2f (0, t);
-		gl.glVertex2f (x, y+h);
-		gl.glEnd ();
+			if ( scrap_dirty )
+				Scrap_Upload();
+			if ( ( ( gl_config.renderer == GL_RENDERER_MCD ) || ( ( gl_config.renderer & GL_RENDERER_RENDITION ) != 0 ) ) && !image.has_alpha )
+				GL.Disable( EnableCap.AlphaTest );
+			GL_Bind( image.texnum );
+			GL.Begin( PrimitiveType.Quads );
+			GL.TexCoord2( image.sl, image.tl );
+			GL.Vertex2( x, y );
+			GL.TexCoord2( image.sh, image.tl );
+			GL.Vertex2( x + image.width, y );
+			GL.TexCoord2( image.sh, image.th );
+			GL.Vertex2( x + image.width, y + image.height );
+			GL.TexCoord2( image.sl, image.th );
+			GL.Vertex2( x, y + image.height );
+			GL.End();
+			if ( ( ( gl_config.renderer == GL_RENDERER_MCD ) || ( ( gl_config.renderer & GL_RENDERER_RENDITION ) != 0 ) ) && !image.has_alpha )
+				GL.Enable( EnableCap.AlphaTest );
+		}
 
-		if ( ( gl_config.renderer == GL_RENDERER_MCD ) || ( (gl_config.renderer & GL_RENDERER_RENDITION) != 0 ) ) 
-			gl.glEnable (GL_ALPHA_TEST);
+		public override void Draw_TileClear( Int32 x, Int32 y, Int32 w, Int32 h, String pic )
+		{
+			image_t image;
+			image = Draw_FindPic( pic );
+			if ( image == null )
+			{
+				VID.Printf( Defines.PRINT_ALL, "Can't find pic: " + pic + '\\' );
+				return;
+			}
+
+			if ( ( ( gl_config.renderer == GL_RENDERER_MCD ) || ( ( gl_config.renderer & GL_RENDERER_RENDITION ) != 0 ) ) && !image.has_alpha )
+				GL.Disable( EnableCap.AlphaTest );
+			GL_Bind( image.texnum );
+			GL.Begin( PrimitiveType.Quads );
+			GL.TexCoord2( x / 64F, y / 64F );
+			GL.Vertex2( x, y );
+			GL.TexCoord2( ( x + w ) / 64F, y / 64F );
+			GL.Vertex2( x + w, y );
+			GL.TexCoord2( ( x + w ) / 64F, ( y + h ) / 64F );
+			GL.Vertex2( x + w, y + h );
+			GL.TexCoord2( x / 64F, ( y + h ) / 64F );
+			GL.Vertex2( x, y + h );
+			GL.End();
+			if ( ( ( gl_config.renderer == GL_RENDERER_MCD ) || ( ( gl_config.renderer & GL_RENDERER_RENDITION ) != 0 ) ) && !image.has_alpha )
+				GL.Enable( EnableCap.AlphaTest );
+		}
+
+		public override void Draw_Fill( Int32 x, Int32 y, Int32 w, Int32 h, Int32 colorIndex )
+		{
+			if ( colorIndex > 255 )
+				Com.Error( Defines.ERR_FATAL, "Draw_Fill: bad color" );
+			GL.Disable( EnableCap.Texture2D );
+			var color = d_8to24table[colorIndex];
+			GL.Color3( ( Byte ) ( ( color >> 0 ) & 0xff ), ( Byte ) ( ( color >> 8 ) & 0xff ), ( Byte ) ( ( color >> 16 ) & 0xff ) );
+			GL.Begin( PrimitiveType.Quads );
+			GL.Vertex2( x, y );
+			GL.Vertex2( x + w, y );
+			GL.Vertex2( x + w, y + h );
+			GL.Vertex2( x, y + h );
+			GL.End();
+			GL.Color3( 1, 1, 1 );
+			GL.Enable( EnableCap.Texture2D );
+		}
+
+		public override void Draw_FadeScreen( )
+		{
+			GL.Enable( EnableCap.Blend );
+			GL.Disable( EnableCap.Texture2D );
+			GL.Color4( 0, 0, 0, 0.8F );
+			GL.Begin( PrimitiveType.Quads );
+			GL.Vertex2( 0, 0 );
+			GL.Vertex2( vid.GetWidth(), 0 );
+			GL.Vertex2( vid.GetWidth(), vid.GetHeight() );
+			GL.Vertex2( 0, vid.GetHeight() );
+			GL.End();
+			GL.Color4( 1, 1, 1, 1 );
+			GL.Enable( EnableCap.Texture2D );
+			GL.Disable( EnableCap.Blend );
+		}
+
+		Int32Buffer image32 = Lib.NewInt32Buffer( 256 * 256 );
+		ByteBuffer image8 = Lib.NewByteBuffer( 256 * 256 );
+		public override void Draw_StretchRaw( Int32 x, Int32 y, Int32 w, Int32 h, Int32 cols, Int32 rows, Byte[] data )
+		{
+			Int32 i, j, trows;
+			Int32 sourceIndex;
+			Int32 frac, fracstep;
+			Single hscale;
+			Int32 row;
+			Single t;
+			GL_Bind( 0 );
+			if ( rows <= 256 )
+			{
+				hscale = 1;
+				trows = rows;
+			}
+			else
+			{
+				hscale = rows / 256F;
+				trows = 256;
+			}
+
+			t = rows * hscale / 256;
+			if ( !qglColorTableEXT )
+			{
+				image32.Clear();
+				var destIndex = 0;
+				for ( i = 0; i < trows; i++ )
+				{
+					row = ( Int32 ) ( i * hscale );
+					if ( row > rows )
+						break;
+					sourceIndex = cols * row;
+					destIndex = i * 256;
+					fracstep = cols * 0x10000 / 256;
+					frac = fracstep >> 1;
+					for ( j = 0; j < 256; j++ )
+					{
+						image32.Put( destIndex + j, r_rawpalette[data[sourceIndex + ( frac >> 16 )] & 0xff] );
+						frac += fracstep;
+					}
+				}
+
+				new Pinnable( image32, ( ptr ) =>
+				{
+					GL.TexImage2D( TextureTarget.Texture2D, 0, gl_tex_solid_format, 256, 256, 0, PixelFormat.Rgba, PixelType.UnsignedByte, ptr );
+				} );
+			}
+			else
+			{
+				image8.Clear();
+				var destIndex = 0;
+				for ( i = 0; i < trows; i++ )
+				{
+					row = ( Int32 ) ( i * hscale );
+					if ( row > rows )
+						break;
+					sourceIndex = cols * row;
+					destIndex = i * 256;
+					fracstep = cols * 0x10000 / 256;
+					frac = fracstep >> 1;
+					for ( j = 0; j < 256; j++ )
+					{
+						image8.Put( destIndex + j, data[sourceIndex + ( frac >> 16 )] );
+						frac += fracstep;
+					}
+				}
+
+				new Pinnable( image8, ( ptr ) =>
+				{
+					GL.TexImage2D( TextureTarget.Texture2D, 0, ( PixelInternalFormat ) GL_COLOR_INDEX8_EXT, 256, 256, 0, PixelFormat.ColorIndex, PixelType.UnsignedByte, ptr );
+				} );
+			}
+
+			GL.TexParameter( TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, ( Int32 ) All.Linear );
+			GL.TexParameter( TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, ( Int32 ) All.Linear );
+			if ( ( gl_config.renderer == GL_RENDERER_MCD ) || ( ( gl_config.renderer & GL_RENDERER_RENDITION ) != 0 ) )
+				GL.Disable( EnableCap.AlphaTest );
+			GL.Begin( PrimitiveType.Quads );
+			GL.TexCoord2( 0, 0 );
+			GL.Vertex2( x, y );
+			GL.TexCoord2( 1, 0 );
+			GL.Vertex2( x + w, y );
+			GL.TexCoord2( 1, t );
+			GL.Vertex2( x + w, y + h );
+			GL.TexCoord2( 0, t );
+			GL.Vertex2( x, y + h );
+			GL.End();
+			if ( ( gl_config.renderer == GL_RENDERER_MCD ) || ( ( gl_config.renderer & GL_RENDERER_RENDITION ) != 0 ) )
+				GL.Enable( EnableCap.AlphaTest );
+		}
 	}
-
 }

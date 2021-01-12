@@ -1,37 +1,33 @@
-/*
- * Vec3Cache.java
- * Copyright (C) 2003
- *
- * $Id: Vec3Cache.java,v 1.2 2006-08-20 21:46:40 salomo Exp $
- */
-package jake2.util;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
-/**
- * Vec3Cache contains float[3] for temporary usage.
- * The usage can reduce the garbage at runtime.
- *
- * @author cwei
- */
-public final class Vec3Cache {
-    
-    private static final float[][] cache = new float[64][3];
-    private static int index = 0;
-    private static int max = 0;
-    
-    public static final float[] get() {
-        //max = Math.max(index, max);
-        return cache[index++];
-    }
-    
-    public static final void release() {
-        index--;
-    }
+namespace Jake2.Util
+{
+    public sealed class Vec3Cache
+    {
+        private static readonly float[][] cache = Lib.CreateJaggedArray<float[][]>(64,3);
+        private static int index = 0;
+        private static int max = 0;
+        public static float[] Get()
+        {
+            return cache[index++];
+        }
 
-    public static final void release(int count) {
-        index-=count;
-    }
-    
-    public static final void debug() {
-        System.err.println("Vec3Cache: max. " + (max + 1) + " vectors used.");
+        public static void Release()
+        {
+            index--;
+        }
+
+        public static void Release(int count)
+        {
+            index -= count;
+        }
+
+        public static void Debug()
+        {
+            System.Diagnostics.Debug.WriteLine("Vec3Cache: max. " + (max + 1) + " vectors used.");
+        }
     }
 }

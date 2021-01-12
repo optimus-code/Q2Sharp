@@ -1,116 +1,75 @@
-/*
-Copyright (C) 1997-2001 Id Software, Inc.
+using Jake2.Util;
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
+namespace Jake2.Game
+{
+	public class moveinfo_t
+	{
+		public float[] start_origin = new float[] { 0, 0, 0 };
+		public float[] start_angles = new float[] { 0, 0, 0 };
+		public float[] end_origin = new float[] { 0, 0, 0 };
+		public float[] end_angles = new float[] { 0, 0, 0 };
+		public int sound_start;
+		public int sound_middle;
+		public int sound_end;
+		public float accel;
+		public float speed;
+		public float decel;
+		public float distance;
+		public float wait;
+		public int state;
+		public float[] dir = new float[] { 0, 0, 0 };
+		public float current_speed;
+		public float move_speed;
+		public float next_speed;
+		public float remaining_distance;
+		public float decel_distance;
+		public EntThinkAdapter endfunc;
+		public virtual void Write( QuakeFile f )
+		{
+			f.WriteVector( start_origin );
+			f.WriteVector( start_angles );
+			f.WriteVector( end_origin );
+			f.WriteVector( end_angles );
+			f.Write( sound_start );
+			f.Write( sound_middle );
+			f.Write( sound_end );
+			f.Write( accel );
+			f.Write( speed );
+			f.Write( decel );
+			f.Write( distance );
+			f.Write( wait );
+			f.Write( state );
+			f.WriteVector( dir );
+			f.Write( current_speed );
+			f.Write( move_speed );
+			f.Write( next_speed );
+			f.Write( remaining_distance );
+			f.Write( decel_distance );
+			f.WriteAdapter( endfunc );
+		}
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
-See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-*/
-
-// Created on 31.10.2003 by RST.
-// $Id: moveinfo_t.java,v 1.2 2004-08-20 21:29:58 salomo Exp $
-
-package jake2.game;
-
-import java.io.IOException;
-
-import jake2.util.QuakeFile;
-
-public class moveinfo_t {
-	// fixed data
-	float[] start_origin= { 0, 0, 0 };
-	float[] start_angles= { 0, 0, 0 };
-	float[] end_origin= { 0, 0, 0 };
-	float[] end_angles= { 0, 0, 0 };
-
-	int sound_start;
-	int sound_middle;
-	int sound_end;
-
-	float accel;
-	float speed;
-	float decel;
-	float distance;
-
-	float wait;
-
-	// state data
-	int state;
-	float[] dir= { 0, 0, 0 };
-
-	float current_speed;
-	float move_speed;
-	float next_speed;
-	float remaining_distance;
-	float decel_distance;
-	EntThinkAdapter endfunc;
-
-	/** saves the moveinfo to the file.*/
-	public void write(QuakeFile f) throws IOException {
-		f.writeVector(start_origin);
-		f.writeVector(start_angles);
-		f.writeVector(end_origin);
-		f.writeVector(end_angles);
-
-		f.writeInt(sound_start);
-		f.writeInt(sound_middle);
-		f.writeInt(sound_end);
-
-		f.writeFloat(accel);
-		f.writeFloat(speed);
-		f.writeFloat(decel);
-		f.writeFloat(distance);
-
-		f.writeFloat(wait);
-
-		f.writeInt(state);
-		f.writeVector(dir);
-
-		f.writeFloat(current_speed);
-		f.writeFloat(move_speed);
-		f.writeFloat(next_speed);
-		f.writeFloat(remaining_distance);
-		f.writeFloat(decel_distance);
-		f.writeAdapter(endfunc);
-	}
-
-	/** Reads the moveinfo from a file. */
-	public void read(QuakeFile f) throws IOException {
-		start_origin= f.readVector();
-		start_angles= f.readVector();
-		end_origin= f.readVector();
-		end_angles= f.readVector();
-
-		sound_start= f.readInt();
-		sound_middle= f.readInt();
-		sound_end= f.readInt();
-
-		accel= f.readFloat();
-		speed= f.readFloat();
-		decel= f.readFloat();
-		distance= f.readFloat();
-
-		wait= f.readFloat();
-
-		state= f.readInt();
-		dir= f.readVector();
-
-		current_speed= f.readFloat();
-		move_speed= f.readFloat();
-		next_speed= f.readFloat();
-		remaining_distance= f.readFloat();
-		decel_distance= f.readFloat();
-		endfunc= (EntThinkAdapter) f.readAdapter();
+		public virtual void Read( QuakeFile f )
+		{
+			start_origin = f.ReadVector();
+			start_angles = f.ReadVector();
+			end_origin = f.ReadVector();
+			end_angles = f.ReadVector();
+			sound_start = f.ReadInt32();
+			sound_middle = f.ReadInt32();
+			sound_end = f.ReadInt32();
+			accel = f.ReadSingle();
+			speed = f.ReadSingle();
+			decel = f.ReadSingle();
+			distance = f.ReadSingle();
+			wait = f.ReadSingle();
+			state = f.ReadInt32();
+			dir = f.ReadVector();
+			current_speed = f.ReadSingle();
+			move_speed = f.ReadSingle();
+			next_speed = f.ReadSingle();
+			remaining_distance = f.ReadSingle();
+			decel_distance = f.ReadSingle();
+			endfunc = ( EntThinkAdapter ) f.ReadAdapter();
+		}
 	}
 }

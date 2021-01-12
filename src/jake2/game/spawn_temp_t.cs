@@ -1,129 +1,121 @@
-/*
-Copyright (C) 1997-2001 Id Software, Inc.
+using Jake2.Util;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
+namespace Jake2.Game
+{
+    public class spawn_temp_t
+    {
+        public string sky = "";
+        public float skyrotate;
+        public float[] skyaxis = new float[]{0, 0, 0};
+        public string nextmap = "";
+        public int lip;
+        public int distance;
+        public int height;
+        public string noise = "";
+        public float pausetime;
+        public string item = "";
+        public string gravity = "";
+        public float minyaw;
+        public float maxyaw;
+        public float minpitch;
+        public float maxpitch;
+        public virtual bool Set(string key, string value)
+        {
+            if (key.Equals("lip"))
+            {
+                lip = Lib.Atoi(value);
+                return true;
+            }
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+            if (key.Equals("distance"))
+            {
+                distance = Lib.Atoi(value);
+                return true;
+            }
 
-See the GNU General Public License for more details.
+            if (key.Equals("height"))
+            {
+                height = Lib.Atoi(value);
+                return true;
+            }
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+            if (key.Equals("noise"))
+            {
+                noise = GameSpawn.ED_NewString(value);
+                return true;
+            }
 
-*/
+            if (key.Equals("pausetime"))
+            {
+                pausetime = Lib.Atof(value);
+                return true;
+            }
 
-// Created on 31.10.2003 by RST.
-// $Id: spawn_temp_t.java,v 1.1 2004-07-07 19:59:26 hzi Exp $
+            if (key.Equals("item"))
+            {
+                item = GameSpawn.ED_NewString(value);
+                return true;
+            }
 
-package jake2.game;
+            if (key.Equals("gravity"))
+            {
+                gravity = GameSpawn.ED_NewString(value);
+                return true;
+            }
 
-import jake2.util.*;
+            if (key.Equals("sky"))
+            {
+                sky = GameSpawn.ED_NewString(value);
+                return true;
+            }
 
-public class spawn_temp_t {
-	// world vars
-	public String sky="";
-	public float skyrotate;
-	public float[] skyaxis = { 0, 0, 0 };
-	
-	public String nextmap="";
+            if (key.Equals("skyrotate"))
+            {
+                skyrotate = Lib.Atof(value);
+                return true;
+            }
 
-	public int lip;
-	public int distance;
-	public int height;
-	
-	public String noise="";
-	public float pausetime;
+            if (key.Equals("skyaxis"))
+            {
+                skyaxis = Lib.Atov(value);
+                return true;
+            }
 
-	public String item="";
-	public String gravity="";
+            if (key.Equals("minyaw"))
+            {
+                minyaw = Lib.Atof(value);
+                return true;
+            }
 
-	public float minyaw;
-	public float maxyaw;
-	public float minpitch;
-	public float maxpitch;
+            if (key.Equals("maxyaw"))
+            {
+                maxyaw = Lib.Atof(value);
+                return true;
+            }
 
-	public boolean set(String key, String value) {
-		if (key.equals("lip")) {
-			lip=Lib.atoi(value);
-			return true;
-		} // F_INT, FFL_SPAWNTEMP),
-		
-		if (key.equals("distance")) {
-			distance=Lib.atoi(value);
-			return true;
-		} // F_INT, FFL_SPAWNTEMP),
-		
-		if (key.equals("height")) {
-			height=Lib.atoi(value);
-			return true;
-		} // F_INT, FFL_SPAWNTEMP),
-		
-		if (key.equals("noise")) {
-			noise = GameSpawn.ED_NewString(value);
-			return true;
-		} // F_LSTRING, FFL_SPAWNTEMP),
-		
-		if (key.equals("pausetime")) {
-			pausetime = Lib.atof(value);
-			return true;
-		} // F_FLOAT, FFL_SPAWNTEMP),
-		
-		if (key.equals("item")) {
-			item = GameSpawn.ED_NewString(value);
-			return true;
-		} // F_LSTRING, FFL_SPAWNTEMP),
-		
-		if (key.equals("gravity")) {
-			 gravity = GameSpawn.ED_NewString(value);
-			return true;
-		} // F_LSTRING, FFL_SPAWNTEMP),
-		
-		if (key.equals("sky")) {
-			sky = GameSpawn.ED_NewString(value);
-			return true;
-		} // F_LSTRING, FFL_SPAWNTEMP),
-		
-		if (key.equals("skyrotate")) {
-			skyrotate=Lib.atof(value);
-			return true;
-		} // F_FLOAT, FFL_SPAWNTEMP),
-		
-		if (key.equals("skyaxis")) {
-			skyaxis=Lib.atov(value);
-			return true;
-		} // F_VECTOR, FFL_SPAWNTEMP),
-		
-		if (key.equals("minyaw")) {
-			minyaw=Lib.atof(value);
-			return true;
-		} // F_FLOAT, FFL_SPAWNTEMP),
-		
-		if (key.equals("maxyaw")) {
-			maxyaw=Lib.atof(value);
-			return true;
-		} // F_FLOAT, FFL_SPAWNTEMP),
-		
-		if (key.equals("minpitch")) {
-			minpitch = Lib.atof(value);
-			return true;
-		} // F_FLOAT, FFL_SPAWNTEMP),
-		
-		if (key.equals("maxpitch")) {
-			maxpitch = Lib.atof(value);
-			return true;
-		} // F_FLOAT, FFL_SPAWNTEMP),
-		
-		if (key.equals("nextmap")) {
-			nextmap  = GameSpawn.ED_NewString(value);
-			return true;
-		} // F_LSTRING, FFL_SPAWNTEMP),
+            if (key.Equals("minpitch"))
+            {
+                minpitch = Lib.Atof(value);
+                return true;
+            }
 
-		return false;
-	}
+            if (key.Equals("maxpitch"))
+            {
+                maxpitch = Lib.Atof(value);
+                return true;
+            }
+
+            if (key.Equals("nextmap"))
+            {
+                nextmap = GameSpawn.ED_NewString(value);
+                return true;
+            }
+
+            return false;
+        }
+    }
 }

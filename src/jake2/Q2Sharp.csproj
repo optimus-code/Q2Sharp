@@ -1,0 +1,103 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="qcommon\Q2DataDialogold.cs" />
+    <Compile Remove="render\Jsr231Renderer.cs" />
+    <Compile Remove="render\LwjglRenderer.cs" />
+    <Compile Remove="render\opengl\CountGL.cs" />
+    <Compile Remove="render\opengl\Jsr231Driver.cs" />
+    <Compile Remove="render\opengl\Jsr231GL.cs" />
+    <Compile Remove="render\opengl\LwjglDriver.cs" />
+    <Compile Remove="render\opengl\LwjglGL.cs" />
+    <Compile Remove="sound\lwjgl\Channel.cs" />
+    <Compile Remove="sound\lwjgl\LWJGLSoundImpl.cs" />
+    <Compile Remove="sound\lwjgl\PlaySound.cs" />
+    <Compile Remove="sys\LWJGLKBD.cs" />
+    <Compile Remove="test\AdapterRegister.cs" />
+    <Compile Remove="test\ConvertDefines.cs" />
+    <Compile Remove="test\jake2\client\CircleListener.cs" />
+    <Compile Remove="test\jake2\client\GhostMouse.cs" />
+    <Compile Remove="test\jake2\qcommon\TestCMD.cs" />
+    <Compile Remove="test\jake2\qcommon\TestCOM.cs" />
+    <Compile Remove="test\jake2\qcommon\TestCvar.cs" />
+    <Compile Remove="test\jake2\qcommon\TestINFO.cs" />
+    <Compile Remove="test\jake2\qcommon\TestLoadGame.cs" />
+    <Compile Remove="test\jake2\qcommon\TestLoadMap.cs" />
+    <Compile Remove="test\jake2\qcommon\TestMD4.cs" />
+    <Compile Remove="test\jake2\qcommon\TestMSG.cs" />
+    <Compile Remove="test\jake2\qcommon\TestRotatePointAroundVector.cs" />
+    <Compile Remove="test\jake2\render\DancingQueens.cs" />
+    <Compile Remove="test\jake2\render\DebugCulling.cs" />
+    <Compile Remove="test\jake2\render\DisposeBuffer.cs" />
+    <Compile Remove="test\jake2\render\TestMap.cs" />
+    <Compile Remove="test\jake2\render\TestRenderer.cs" />
+    <Compile Remove="test\Unpack.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="qcommon\Q2DataDialogold.cs" />
+    <None Include="render\Jsr231Renderer.cs" />
+    <None Include="render\LwjglRenderer.cs" />
+    <None Include="render\opengl\CountGL.cs" />
+    <None Include="render\opengl\Jsr231Driver.cs" />
+    <None Include="render\opengl\Jsr231GL.cs" />
+    <None Include="render\opengl\LwjglDriver.cs" />
+    <None Include="render\opengl\LwjglGL.cs" />
+    <None Include="sound\lwjgl\Channel.cs" />
+    <None Include="sound\lwjgl\LWJGLSoundImpl.cs" />
+    <None Include="sound\lwjgl\PlaySound.cs" />
+    <None Include="sys\LWJGLKBD.cs" />
+    <None Include="test\AdapterRegister.cs" />
+    <None Include="test\ConvertDefines.cs" />
+    <None Include="test\jake2\client\CircleListener.cs" />
+    <None Include="test\jake2\client\GhostMouse.cs" />
+    <None Include="test\jake2\qcommon\TestCMD.cs" />
+    <None Include="test\jake2\qcommon\TestCOM.cs" />
+    <None Include="test\jake2\qcommon\TestCvar.cs" />
+    <None Include="test\jake2\qcommon\TestINFO.cs" />
+    <None Include="test\jake2\qcommon\TestLoadGame.cs" />
+    <None Include="test\jake2\qcommon\TestLoadMap.cs" />
+    <None Include="test\jake2\qcommon\TestMD4.cs" />
+    <None Include="test\jake2\qcommon\TestMSG.cs" />
+    <None Include="test\jake2\qcommon\TestRotatePointAroundVector.cs" />
+    <None Include="test\jake2\render\DancingQueens.cs" />
+    <None Include="test\jake2\render\DebugCulling.cs" />
+    <None Include="test\jake2\render\DisposeBuffer.cs" />
+    <None Include="test\jake2\render\TestMap.cs" />
+    <None Include="test\jake2\render\TestRenderer.cs" />
+    <None Include="test\Unpack.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="J2N" Version="2.0.0-beta-0011" />
+    <PackageReference Include="NAudio" Version="1.10.0" />
+    <PackageReference Include="OpenTK" Version="4.4.0" />
+    <PackageReference Include="SharpAudio" Version="1.0.27-beta" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

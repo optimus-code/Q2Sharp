@@ -1,160 +1,102 @@
-/*
-Copyright (C) 1997-2001 Id Software, Inc.
+using Jake2.Util;
+using System;
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
-See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-*/
-
-// Created on 31.10.2003 by RST.
-
-package jake2.game;
-
-import jake2.util.QuakeFile;
-
-import java.io.IOException;
-
-public class monsterinfo_t {
-
-	public mmove_t currentmove;
-	public int aiflags;
-	public int nextframe;
-	public float scale;
-
-	public EntThinkAdapter stand;
-	public EntThinkAdapter idle;
-	public EntThinkAdapter search;
-	public EntThinkAdapter walk;
-	public EntThinkAdapter run;
-
-	public EntDodgeAdapter dodge;
-
-	public EntThinkAdapter attack;
-	public EntThinkAdapter melee;
-
-	public EntInteractAdapter sight;
-
-	public EntThinkAdapter checkattack;
-
-	public float pausetime;
-	public float attack_finished;
-
-	public float[] saved_goal= { 0, 0, 0 };
-	public float search_time;
-	public float trail_time;
-	public float[] last_sighting= { 0, 0, 0 };
-	public int attack_state;
-	public int lefty;
-	public float idle_time;
-	public int linkcount;
-
-	public int power_armor_type;
-	public int power_armor_power;
-
-	/** Writes the monsterinfo to the file.*/
-	public void write(QuakeFile f) throws IOException
+namespace Jake2.Game
+{
+	public class monsterinfo_t
 	{
-		f.writeBoolean(currentmove != null);
-		if (currentmove != null)
-			currentmove.write(f);
-		f.writeInt(aiflags);
-		f.writeInt(nextframe);
-		f.writeFloat(scale);
-		f.writeAdapter(stand);
-		f.writeAdapter(idle);
-		f.writeAdapter(search);
-		f.writeAdapter(walk);
-		f.writeAdapter(run);
-		
-		f.writeAdapter(dodge);
-		
-		f.writeAdapter(attack);
-		f.writeAdapter(melee);
-		
-		f.writeAdapter(sight);
-		
-		f.writeAdapter(checkattack);
-		
- 		f.writeFloat(pausetime);
- 		f.writeFloat(attack_finished);
- 	
-		f.writeVector(saved_goal);
-		
-		f.writeFloat(search_time);
-		f.writeFloat(trail_time);
-		
-		f.writeVector(last_sighting);
- 
-		f.writeInt(attack_state);
-		f.writeInt(lefty);
-	
-		f.writeFloat(idle_time);
-		f.writeInt(linkcount);
-		
-		f.writeInt(power_armor_power);
-		f.writeInt(power_armor_type);
-	}
-
-	/** Writes the monsterinfo to the file.*/
-	public void read(QuakeFile f) throws IOException
-	{
-		if (f.readBoolean())
+		public mmove_t currentmove;
+		public Int32 aiflags;
+		public Int32 nextframe;
+		public Single scale;
+		public EntThinkAdapter stand;
+		public EntThinkAdapter idle;
+		public EntThinkAdapter search;
+		public EntThinkAdapter walk;
+		public EntThinkAdapter run;
+		public EntDodgeAdapter dodge;
+		public EntThinkAdapter attack;
+		public EntThinkAdapter melee;
+		public EntInteractAdapter sight;
+		public EntThinkAdapter checkattack;
+		public Single pausetime;
+		public Single attack_finished;
+		public Single[] saved_goal = new Single[] { 0, 0, 0 };
+		public Single search_time;
+		public Single trail_time;
+		public Single[] last_sighting = new Single[] { 0, 0, 0 };
+		public Int32 attack_state;
+		public Int32 lefty;
+		public Single idle_time;
+		public Int32 linkcount;
+		public Int32 power_armor_type;
+		public Int32 power_armor_power;
+		public virtual void Write( QuakeFile f )
 		{
-			currentmove= new mmove_t();
-			currentmove.read(f);
+			f.Write( currentmove != null );
+			if ( currentmove != null )
+				currentmove.Write( f );
+			f.Write( aiflags );
+			f.Write( nextframe );
+			f.Write( scale );
+			f.WriteAdapter( stand );
+			f.WriteAdapter( idle );
+			f.WriteAdapter( search );
+			f.WriteAdapter( walk );
+			f.WriteAdapter( run );
+			f.WriteAdapter( dodge );
+			f.WriteAdapter( attack );
+			f.WriteAdapter( melee );
+			f.WriteAdapter( sight );
+			f.WriteAdapter( checkattack );
+			f.Write( pausetime );
+			f.Write( attack_finished );
+			f.WriteVector( saved_goal );
+			f.Write( search_time );
+			f.Write( trail_time );
+			f.WriteVector( last_sighting );
+			f.Write( attack_state );
+			f.Write( lefty );
+			f.Write( idle_time );
+			f.Write( linkcount );
+			f.Write( power_armor_power );
+			f.Write( power_armor_type );
 		}
-		else
-			currentmove= null; 
-		aiflags = f.readInt();
-		nextframe = f.readInt();
-		scale = f.readFloat();
-		stand = (EntThinkAdapter) f.readAdapter();
-		idle = (EntThinkAdapter) f.readAdapter();
-		search = (EntThinkAdapter) f.readAdapter();
-		walk = (EntThinkAdapter) f.readAdapter();
-		run = (EntThinkAdapter) f.readAdapter();
-		
-		dodge = (EntDodgeAdapter) f.readAdapter();
-		
-		attack = (EntThinkAdapter) f.readAdapter();
-		melee = (EntThinkAdapter) f.readAdapter();
-		
-		sight = (EntInteractAdapter) f.readAdapter();
-		
-		checkattack = (EntThinkAdapter) f.readAdapter();
-		
- 		pausetime = f.readFloat();
- 		attack_finished = f.readFloat();
- 	
-		saved_goal = f.readVector();
-		
-		search_time = f.readFloat();
-		trail_time = f.readFloat();
-		
-		last_sighting = f.readVector();
- 
-		attack_state = f.readInt();
-		lefty = f.readInt();
-	
-		idle_time = f.readFloat();
-		linkcount = f.readInt();
-		
-		power_armor_power = f.readInt();
-		power_armor_type = f.readInt();
 
+		public virtual void Read( QuakeFile f )
+		{
+			if ( f.ReadBoolean() )
+			{
+				currentmove = new mmove_t();
+				currentmove.Read( f );
+			}
+			else
+				currentmove = null;
+			aiflags = f.ReadInt32();
+			nextframe = f.ReadInt32();
+			scale = f.ReadSingle();
+			stand = ( EntThinkAdapter ) f.ReadAdapter();
+			idle = ( EntThinkAdapter ) f.ReadAdapter();
+			search = ( EntThinkAdapter ) f.ReadAdapter();
+			walk = ( EntThinkAdapter ) f.ReadAdapter();
+			run = ( EntThinkAdapter ) f.ReadAdapter();
+			dodge = ( EntDodgeAdapter ) f.ReadAdapter();
+			attack = ( EntThinkAdapter ) f.ReadAdapter();
+			melee = ( EntThinkAdapter ) f.ReadAdapter();
+			sight = ( EntInteractAdapter ) f.ReadAdapter();
+			checkattack = ( EntThinkAdapter ) f.ReadAdapter();
+			pausetime = f.ReadSingle();
+			attack_finished = f.ReadSingle();
+			saved_goal = f.ReadVector();
+			search_time = f.ReadSingle();
+			trail_time = f.ReadSingle();
+			last_sighting = f.ReadVector();
+			attack_state = f.ReadInt32();
+			lefty = f.ReadInt32();
+			idle_time = f.ReadSingle();
+			linkcount = f.ReadInt32();
+			power_armor_power = f.ReadInt32();
+			power_armor_type = f.ReadInt32();
+		}
 	}
-
-
 }

@@ -1,169 +1,139 @@
-/*
- * Created on Dec 22, 2004
- *
- * Copyright (C) 2003
- *
- * $Id: PlaySound.java,v 1.2 2005-05-08 13:37:46 cawe Exp $
- */
-/*
-Copyright (C) 1997-2001 Id Software, Inc.
+using Jake2.Util;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
+namespace Jake2.Sound.Lwjgl
+{
+    public class PlaySound
+    {
+        static readonly int MAX_PLAYSOUNDS = 128;
+        private static PlaySound freeList;
+        private static PlaySound playableList;
+        private static PlaySound[] backbuffer = new PlaySound[MAX_PLAYSOUNDS];
+        static PlaySound()
+        {
+            for (int i = 0; i < backbuffer.Length; i++)
+            {
+                backbuffer[i] = new PlaySound();
+            }
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-*/
-package jake2.sound.lwjgl;
-
-import jake2.Globals;
-import jake2.util.Math3D;
-
-/**
- * PlaySound
- * 
- * @author cwei
- */
-public class PlaySound {
-    
-	final static int MAX_PLAYSOUNDS = 128;
-	
-	// list with sentinel
-	private static PlaySound freeList;
-	private static PlaySound playableList;
-	
-	private static PlaySound[] backbuffer = new PlaySound[MAX_PLAYSOUNDS];
-	static {
-	    for (int i = 0; i < backbuffer.length; i++) {
-	        backbuffer[i] = new PlaySound();
+            freeList = new PlaySound();
+            playableList = new PlaySound();
+            Reset();
         }
-	    // init the sentinels
-	    freeList = new PlaySound();
-	    playableList = new PlaySound();
-	    // reset the lists
-	    reset();
-	}
-	
-    // sound attributes
-    int type;
-	int entnum;
-	int entchannel;
-    int bufferId;
-    float volume;
-    float attenuation;
-    float[] origin = {0,0,0};
 
-    // begin time in ms
-    private long beginTime;
-
-    // for linked list
-    private PlaySound prev, next;
-
-    private PlaySound() {
-        prev = next = null;
-        this.clear();
-    }
-    
-    private void clear() {
-		type = bufferId = entnum = entchannel = -1;
-        // volume = attenuation = beginTime = 0;
-        attenuation = beginTime = 0;
-        // Math3D.VectorClear(origin);
-    }
-
-    static void reset() {
-        // init the sentinels
-        freeList.next = freeList.prev = freeList;
-        playableList.next = playableList.prev = playableList;
-        
-        // concat the the freeList
-        PlaySound ps;
-	    for (int i = 0; i < backbuffer.length; i++) {
-	        ps = backbuffer[i];
-	        ps.clear();
-	        ps.prev = freeList;
-            ps.next = freeList.next;
-            ps.prev.next = ps;
-            ps.next.prev = ps;
+        public int type;
+        public int entnum;
+        public int entchannel;
+        public int bufferId;
+        public float volume;
+        public float attenuation;
+        public float[] origin = new float[]{0, 0, 0};
+        private long beginTime;
+        private PlaySound prev, next;
+        private PlaySound()
+        {
+            prev = next = null;
+            this.Clear();
         }
-    }
-    
-    static PlaySound nextPlayableSound() {
-        PlaySound ps = null;
-        while (true) {
-            ps = playableList.next;
-            if (ps == playableList || ps.beginTime > Globals.cl.time)
+
+        private void Clear()
+        {
+            type = bufferId = entnum = entchannel = -1;
+            attenuation = beginTime = 0;
+        }
+
+        public static void Reset()
+        {
+            freeList.next = freeList.prev = freeList;
+            playableList.next = playableList.prev = playableList;
+            PlaySound ps;
+            for (int i = 0; i < backbuffer.Length; i++)
+            {
+                ps = backbuffer[i];
+                ps.Clear();
+                ps.prev = freeList;
+                ps.next = freeList.next;
+                ps.prev.next = ps;
+                ps.next.prev = ps;
+            }
+        }
+
+        public static PlaySound NextPlayableSound()
+        {
+            PlaySound ps = null;
+            while (true)
+            {
+                ps = playableList.next;
+                if (ps == playableList || ps.beginTime > Globals.cl.time)
+                    return null;
+                PlaySound.Release(ps);
+                return ps;
+            }
+        }
+
+        private static PlaySound Get()
+        {
+            PlaySound ps = freeList.next;
+            if (ps == freeList)
                 return null;
-            PlaySound.release(ps);
+            ps.prev.next = ps.next;
+            ps.next.prev = ps.prev;
             return ps;
         }
-    }
-    
-    private static PlaySound get() {
-        PlaySound ps = freeList.next;
-        if (ps == freeList)
-            return null;
-        
-        ps.prev.next = ps.next;
-        ps.next.prev = ps.prev;
-        return ps;
-    }
 
-    private static void add(PlaySound ps) {
-        
-        PlaySound sort = playableList.next;
-        
-        for (; sort != playableList && sort.beginTime < ps.beginTime; sort = sort.next);
-        ps.next = sort;
-        ps.prev = sort.prev;
-        ps.next.prev = ps;
-        ps.prev.next = ps;
-    }
+        private static void Add(PlaySound ps)
+        {
+            PlaySound sort = playableList.next;
+            ps.next = sort;
+            ps.prev = sort.prev;
+            ps.next.prev = ps;
+            ps.prev.next = ps;
+        }
 
-    private static void release(PlaySound ps) {
-        ps.prev.next = ps.next;
-        ps.next.prev = ps.prev;
-        // add to free list
-        ps.next = freeList.next;
-        freeList.next.prev = ps;
-        ps.prev = freeList;
-        freeList.next = ps;
-    }
-    
-    static void allocate(float[] origin, int entnum, int entchannel,
-            int bufferId, float volume, float attenuation, float timeoffset) {
+        private static void Release(PlaySound ps)
+        {
+            ps.prev.next = ps.next;
+            ps.next.prev = ps.prev;
+            ps.next = freeList.next;
+            freeList.next.prev = ps;
+            ps.prev = freeList;
+            freeList.next = ps;
+        }
 
-        PlaySound ps = PlaySound.get();
+        public static void Allocate(float[] origin, int entnum, int entchannel, int bufferId, float volume, float attenuation, float timeoffset)
+        {
+            PlaySound ps = PlaySound.Get();
+            if (ps != null)
+            {
+                if (entnum == Globals.cl.playernum + 1)
+                {
+                    ps.type = Channel.LISTENER;
+                }
+                else if (origin != null)
+                {
+                    ps.type = Channel.FIXED;
+                    Math3D.VectorCopy(origin, ps.origin);
+                }
+                else
+                {
+                    ps.type = Channel.DYNAMIC;
+                }
 
-        if (ps != null) {
-            // find the right sound type
-            if (entnum == Globals.cl.playernum + 1) {
-                ps.type = Channel.LISTENER;
-            } else if (origin != null) {
-                ps.type = Channel.FIXED;
-                Math3D.VectorCopy(origin, ps.origin);
-            } else {
-                ps.type = Channel.DYNAMIC;
+                ps.entnum = entnum;
+                ps.entchannel = entchannel;
+                ps.bufferId = bufferId;
+                ps.volume = volume;
+                ps.attenuation = attenuation;
+                ps.beginTime = Globals.cl.time + (long)(timeoffset * 1000);
+                PlaySound.Add(ps);
             }
-            ps.entnum = entnum;
-            ps.entchannel = entchannel;
-            ps.bufferId = bufferId;
-            ps.volume = volume;
-            ps.attenuation = attenuation;
-            ps.beginTime = Globals.cl.time + (long)(timeoffset * 1000);
-            PlaySound.add(ps);
-        } else {
-            System.err.println("PlaySounds out of Limit");
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("PlaySounds out of Limit");
+            }
         }
     }
 }

@@ -1,331 +1,311 @@
-/*
- * LWJGLBase.java
- * Copyright (C) 2004
- * 
- * $Id: LwjglDriver.java,v 1.5 2007-11-03 13:04:23 cawe Exp $
- */
-/*
- Copyright (C) 1997-2001 Id Software, Inc.
+using Jake2.Client;
+using Jake2.Qcommon;
+using OpenTK.Windowing.GraphicsLibraryFramework;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Text;
 
- This program is free software; you can redistribute it and/or
- modify it under the terms of the GNU General Public License
- as published by the Free Software Foundation; either version 2
- of the License, or (at your option) any later version.
+namespace Jake2.Render.Opengl
+{
+    public abstract class LwjglDriver : LwjglGL, IGLDriver
+    {
+        public LwjglDriver()
+        {
+        }
 
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        private VideoMode oldDisplayMode;
+        int window_xpos, window_ypos;
+        private java.awt.VideoMode ToAwtDisplayMode(VideoMode m)
+        {
+            return new VideoMode(m.GetWidth(), m.GetHeight(), m.GetBitsPerPixel(), m.GetFrequency());
+        }
 
- See the GNU General Public License for more details.
+        public virtual VideoMode[] GetModeList()
+        {
+            VideoMode[] modes;
+            try
+            {
+                modes = Display.GetAvailableDisplayModes();
+            }
+            catch (LWJGLException e)
+            {
+                Com.Println(e.GetMessage());
+                return new java.awt.VideoMode[0];
+            }
 
- You should have received a copy of the GNU General Public License
- along with this program; if not, write to the Free Software
- Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+            LinkedList l = new LinkedList();
+            l.Add(ToAwtDisplayMode(oldDisplayMode));
+            for (int i = 0; i < modes.length; i++)
+            {
+                VideoMode m = modes[i];
+                if (m.GetBitsPerPixel() != oldDisplayMode.GetBitsPerPixel())
+                    continue;
+                if (m.GetFrequency() > oldDisplayMode.GetFrequency())
+                    continue;
+                if (m.GetHeight() < 240 || m.GetWidth() < 320)
+                    continue;
+                int j = 0;
+                java.awt.VideoMode ml = null;
+                for (j = 0; j < l.Size(); j++)
+                {
+                    ml = (java.awt.VideoMode)l.Get(j);
+                    if (ml.GetWidth() > m.GetWidth())
+                        break;
+                    if (ml.GetWidth() == m.GetWidth() && ml.GetHeight() >= m.GetHeight())
+                        break;
+                }
 
- */
-package jake2.render.opengl;
+                if (j == l.Size())
+                {
+                    l.AddLast(ToAwtDisplayMode(m));
+                }
+                else if (ml.GetWidth() > m.GetWidth() || ml.GetHeight() > m.GetHeight())
+                {
+                    l.Add(j, ToAwtDisplayMode(m));
+                }
+                else if (m.GetFrequency() > ml.GetRefreshRate())
+                {
+                    l.Remove(j);
+                    l.Add(j, ToAwtDisplayMode(m));
+                }
+            }
 
-import jake2.Defines;
-import jake2.client.VID;
-import jake2.qcommon.Com;
-import jake2.qcommon.xcommand_t;
-import jake2.render.Base;
+            java.awt.VideoMode[] ma = new java.awt.VideoMode[l.Size()];
+            l.ToArray(ma);
+            return ma;
+        }
 
-import java.awt.Dimension;
-import java.util.LinkedList;
+        public virtual VideoMode[] GetLWJGLModeList()
+        {
+            VideoMode[] modes;
+            try
+            {
+                modes = Display.GetAvailableDisplayModes();
+            }
+            catch (LWJGLException e)
+            {
+                Com.Println(e.GetMessage());
+                return new VideoMode[0];
+            }
 
-import org.lwjgl.LWJGLException;
-import org.lwjgl.opengl.Display;
-import org.lwjgl.opengl.DisplayMode;
+            LinkedList l = new LinkedList();
+            l.Add(oldDisplayMode);
+            for (int i = 0; i < modes.length; i++)
+            {
+                VideoMode m = modes[i];
+                if (m.GetBitsPerPixel() != oldDisplayMode.GetBitsPerPixel())
+                    continue;
+                if (m.GetFrequency() > Math.Max(60, oldDisplayMode.GetFrequency()))
+                    continue;
+                if (m.GetHeight() < 240 || m.GetWidth() < 320)
+                    continue;
+                if (m.GetHeight() > oldDisplayMode.GetHeight() || m.GetWidth() > oldDisplayMode.GetWidth())
+                    continue;
+                int j = 0;
+                VideoMode ml = null;
+                for (j = 0; j < l.Size(); j++)
+                {
+                    ml = (VideoMode)l.Get(j);
+                    if (ml.GetWidth() > m.GetWidth())
+                        break;
+                    if (ml.GetWidth() == m.GetWidth() && ml.GetHeight() >= m.GetHeight())
+                        break;
+                }
 
-/**
- * LWJGLBase
- * 
- * @author dsanders/cwei
- */
-public abstract class LwjglDriver extends LwjglGL implements GLDriver {
+                if (j == l.Size())
+                {
+                    l.AddLast(m);
+                }
+                else if (ml.GetWidth() > m.GetWidth() || ml.GetHeight() > m.GetHeight())
+                {
+                    l.Add(j, m);
+                }
+                else if (m.GetFrequency() > ml.GetFrequency())
+                {
+                    l.Remove(j);
+                    l.Add(j, m);
+                }
+            }
 
-    protected LwjglDriver() {
-        // see LwjglRenderer
-    }
+            VideoMode[] ma = new VideoMode[l.Size()];
+            l.ToArray(ma);
+            return ma;
+        }
 
-    private DisplayMode oldDisplayMode;
-
-    // window position on the screen
-    int window_xpos, window_ypos;
-
-    private java.awt.DisplayMode toAwtDisplayMode(DisplayMode m) {
-        return new java.awt.DisplayMode(m.getWidth(), m.getHeight(), m
-                .getBitsPerPixel(), m.getFrequency());
-    }
-
-    public java.awt.DisplayMode[] getModeList() {
-	DisplayMode[] modes;
-	try {
-	    modes = Display.getAvailableDisplayModes();
-	} catch (LWJGLException e) {
-	    Com.Println(e.getMessage());
-	    return new java.awt.DisplayMode[0];
-	}
-        LinkedList l = new LinkedList();
-        l.add(toAwtDisplayMode(oldDisplayMode));
-
-        for (int i = 0; i < modes.length; i++) {
-            DisplayMode m = modes[i];
-
-            if (m.getBitsPerPixel() != oldDisplayMode.getBitsPerPixel())
-                continue;
-            if (m.getFrequency() > oldDisplayMode.getFrequency())
-                continue;
-            if (m.getHeight() < 240 || m.getWidth() < 320)
-                continue;
-
-            int j = 0;
-            java.awt.DisplayMode ml = null;
-            for (j = 0; j < l.size(); j++) {
-                ml = (java.awt.DisplayMode) l.get(j);
-                if (ml.getWidth() > m.getWidth())
+        private VideoMode FindDisplayMode(Size dim)
+        {
+            VideoMode mode = null;
+            VideoMode m = null;
+            VideoMode[] modes = GetLWJGLModeList();
+            int w = dim.Width;
+            int h = dim.Height;
+            for (int i = 0; i < modes.Length; i++)
+            {
+                m = modes[i];
+                if (m.GetWidth() == w && m.GetHeight() == h)
+                {
+                    mode = m;
                     break;
-                if (ml.getWidth() == m.getWidth()
-                        && ml.getHeight() >= m.getHeight())
-                    break;
+                }
             }
-            if (j == l.size()) {
-                l.addLast(toAwtDisplayMode(m));
-            } else if (ml.getWidth() > m.getWidth()
-                    || ml.getHeight() > m.getHeight()) {
-                l.add(j, toAwtDisplayMode(m));
-            } else if (m.getFrequency() > ml.getRefreshRate()) {
-                l.remove(j);
-                l.add(j, toAwtDisplayMode(m));
-            }
-        }
-        java.awt.DisplayMode[] ma = new java.awt.DisplayMode[l.size()];
-        l.toArray(ma);
-        return ma;
-    }
 
-    public DisplayMode[] getLWJGLModeList() {
-	DisplayMode[] modes;
-	try {
-	    modes = Display.getAvailableDisplayModes();
-	} catch (LWJGLException e) {
-	    Com.Println(e.getMessage());
-	    return new DisplayMode[0];
-	}
-
-        LinkedList l = new LinkedList();
-        l.add(oldDisplayMode);
-
-        for (int i = 0; i < modes.length; i++) {
-            DisplayMode m = modes[i];
-
-            if (m.getBitsPerPixel() != oldDisplayMode.getBitsPerPixel())
-                continue;
-            if (m.getFrequency() > Math.max(60, oldDisplayMode.getFrequency()))
-                continue;
-            if (m.getHeight() < 240 || m.getWidth() < 320)
-                continue;
-            if (m.getHeight() > oldDisplayMode.getHeight() || m.getWidth() > oldDisplayMode.getWidth())
-                continue;
-
-            int j = 0;
-            DisplayMode ml = null;
-            for (j = 0; j < l.size(); j++) {
-                ml = (DisplayMode) l.get(j);
-                if (ml.getWidth() > m.getWidth())
-                    break;
-                if (ml.getWidth() == m.getWidth()
-                        && ml.getHeight() >= m.getHeight())
-                    break;
-            }
-            if (j == l.size()) {
-                l.addLast(m);
-            } else if (ml.getWidth() > m.getWidth()
-                    || ml.getHeight() > m.getHeight()) {
-                l.add(j, m);
-            } else if (m.getFrequency() > ml.getFrequency()) {
-                l.remove(j);
-                l.add(j, m);
-            }
-        }
-        DisplayMode[] ma = new DisplayMode[l.size()];
-        l.toArray(ma);
-        return ma;
-    }
-
-    private DisplayMode findDisplayMode(Dimension dim) {
-        DisplayMode mode = null;
-        DisplayMode m = null;
-        DisplayMode[] modes = getLWJGLModeList();
-        int w = dim.width;
-        int h = dim.height;
-
-        for (int i = 0; i < modes.length; i++) {
-            m = modes[i];
-            if (m.getWidth() == w && m.getHeight() == h) {
-                mode = m;
-                break;
-            }
-        }
-        if (mode == null)
-            mode = oldDisplayMode;
-        return mode;
-    }
-
-    String getModeString(DisplayMode m) {
-        StringBuffer sb = new StringBuffer();
-        sb.append(m.getWidth());
-        sb.append('x');
-        sb.append(m.getHeight());
-        sb.append('x');
-        sb.append(m.getBitsPerPixel());
-        sb.append('@');
-        sb.append(m.getFrequency());
-        sb.append("Hz");
-        return sb.toString();
-    }
-
-    /**
-     * @param dim
-     * @param mode
-     * @param fullscreen
-     * @return enum rserr_t
-     */
-    public int setMode(Dimension dim, int mode, boolean fullscreen) {
-
-        Dimension newDim = new Dimension();
-
-        VID.Printf(Defines.PRINT_ALL, "Initializing OpenGL display\n");
-
-        VID.Printf(Defines.PRINT_ALL, "...setting mode " + mode + ":");
-
-        /*
-         * fullscreen handling
-         */
-        if (oldDisplayMode == null) {
-            oldDisplayMode = Display.getDisplayMode();
+            if (mode == null)
+                mode = oldDisplayMode;
+            return mode;
         }
 
-        if (!VID.GetModeInfo(newDim, mode)) {
-            VID.Printf(Defines.PRINT_ALL, " invalid mode\n");
-            return Base.rserr_invalid_mode;
+        public virtual string GetModeString(VideoMode m)
+        {
+            StringBuffer sb = new StringBuffer();
+            sb.Append(m.GetWidth());
+            sb.Append('x');
+            sb.Append(m.GetHeight());
+            sb.Append('x');
+            sb.Append(m.GetBitsPerPixel());
+            sb.Append('@');
+            sb.Append(m.GetFrequency());
+            sb.Append("Hz");
+            return sb.ToString();
         }
 
-        VID.Printf(Defines.PRINT_ALL, " " + newDim.width + " " + newDim.height
-                + '\n');
+        public virtual int SetMode( Size dim, int mode, bool fullscreen)
+        {
+            VID.Printf(Defines.PRINT_ALL, "Initializing OpenGL display\\n");
+            VID.Printf(Defines.PRINT_ALL, "...setting mode " + mode + ":");
+            if (oldDisplayMode == null)
+            {
+                oldDisplayMode = Display.GetDisplayMode();
+            }
 
-        // destroy the existing window
-        shutdown();
-
-        Display.setTitle("Jake2 (lwjgl)");
-
-        DisplayMode displayMode = findDisplayMode(newDim);
-        newDim.width = displayMode.getWidth();
-        newDim.height = displayMode.getHeight();
-
-        if (fullscreen) {
-            try {
-                Display.setDisplayMode(displayMode);
-            } catch (LWJGLException e) {
+            if (!VID.GetModeInfo(out var newDim, mode))
+            {
+                VID.Printf(Defines.PRINT_ALL, " invalid mode\\n");
                 return Base.rserr_invalid_mode;
             }
 
-            Display.setLocation(0, 0);
+            VID.Printf(Defines.PRINT_ALL, " " + newDim.Width + " " + newDim.Height + '\\');
+            Shutdown();
+            Display.SetTitle("Jake2 (lwjgl)");
+            VideoMode VideoMode = FindDisplayMode(newDim);
+            newDim.Width = VideoMode.GetWidth();
+            newDim.Height = VideoMode.GetHeight();
+            if (fullscreen)
+            {
+                try
+                {
+                    Display.SetDisplayMode(VideoMode);
+                }
+                catch (LWJGLException e)
+                {
+                    return Base.rserr_invalid_mode;
+                }
 
-            try {
-                Display.setFullscreen(fullscreen);
-            } catch (LWJGLException e) {
-                return Base.rserr_invalid_fullscreen;
+                Display.SetLocation(0, 0);
+                try
+                {
+                    Display.SetFullscreen(fullscreen);
+                }
+                catch (LWJGLException e)
+                {
+                    return Base.rserr_invalid_fullscreen;
+                }
+
+                VID.Printf(Defines.PRINT_ALL, "...setting fullscreen " + GetModeString(VideoMode) + '\\');
+            }
+            else
+            {
+                try
+                {
+                    Display.SetDisplayMode(VideoMode);
+                }
+                catch (LWJGLException e)
+                {
+                    return Base.rserr_invalid_mode;
+                }
+
+                try
+                {
+                    Display.SetFullscreen(false);
+                }
+                catch (LWJGLException e)
+                {
+                    return Base.rserr_invalid_fullscreen;
+                }
             }
 
-            VID.Printf(Defines.PRINT_ALL, "...setting fullscreen "
-                    + getModeString(displayMode) + '\n');
-
-        } else {
-            try {
-                Display.setDisplayMode(displayMode);
-            } catch (LWJGLException e) {
-                return Base.rserr_invalid_mode;
+            Base.SetVid(newDim.width, newDim.height);
+            try
+            {
+                Display.Create();
+            }
+            catch (LWJGLException e)
+            {
+                return Base.rserr_unknown;
             }
 
-            try {
-                Display.setFullscreen(false);
-            } catch (LWJGLException e) {
-                return Base.rserr_invalid_fullscreen;
+            VID.NewWindow(newDim.width, newDim.height);
+            return Base.rserr_ok;
+        }
+
+        public virtual void Shutdown()
+        {
+            if (oldDisplayMode != null && Display.IsFullscreen())
+            {
+                try
+                {
+                    Display.SetDisplayMode(oldDisplayMode);
+                }
+                catch (Exception e)
+                {
+                    e.PrintStackTrace();
+                }
             }
-            //Display.setLocation(window_xpos, window_ypos);
-        }
 
-        Base.setVid(newDim.width, newDim.height);
-
-        // vid.width = newDim.width;
-        // vid.height = newDim.height;
-
-        try {
-            Display.create();
-        } catch (LWJGLException e) {
-            return Base.rserr_unknown;
-        }
-
-        // let the sound and input subsystems know about the new window
-        VID.NewWindow(newDim.width, newDim.height);
-        return Base.rserr_ok;
-    }
-
-    public void shutdown() {
-        if (oldDisplayMode != null && Display.isFullscreen()) {
-            try {
-                Display.setDisplayMode(oldDisplayMode);
-            } catch (Exception e) {
-                e.printStackTrace();
+            while (Display.IsCreated())
+            {
+                Display.Destroy();
             }
         }
 
-        while (Display.isCreated()) {
-            Display.destroy();
+        public virtual bool Init(int xpos, int ypos)
+        {
+            window_xpos = xpos;
+            window_ypos = ypos;
+            return true;
         }
-    }
 
-    /**
-     * @return true
-     */
-    public boolean init(int xpos, int ypos) {
-        // do nothing
-        window_xpos = xpos;
-        window_ypos = ypos;
-        return true;
-    }
+        public virtual void BeginFrame(float camera_separation)
+        {
+        }
 
-    public void beginFrame(float camera_separation) {
-        // do nothing
-    }
+        public virtual void EndFrame()
+        {
+            GlFlush();
+            Display.Update();
+        }
 
-    public void endFrame() {
-        glFlush();
-        // swap buffers
-        Display.update();
-    }
+        public virtual void AppActivate(bool activate)
+        {
+        }
 
-    public void appActivate(boolean activate) {
-        // do nothing
-    }
+        public virtual void EnableLogging(bool enable)
+        {
+        }
 
-    public void enableLogging(boolean enable) {
-        // do nothing
-    }
+        public virtual void LogNewFrame()
+        {
+        }
 
-    public void logNewFrame() {
-        // do nothing
-    }
+        public void UpdateScreen(xcommand_t callback)
+        {
+            callback.Execute();
+        }
 
-    /**
-     * this is a hack for jogl renderers.
-     * 
-     * @param callback
-     */
-    public final void updateScreen(xcommand_t callback) {
-        callback.execute();
-    }
-
+		public virtual void Screenshot( )
+		{
+			throw new NotImplementedException();
+		}
+	}
 }

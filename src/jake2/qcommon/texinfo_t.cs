@@ -1,65 +1,34 @@
-/*
-Copyright (C) 1997-2001 Id Software, Inc.
+using J2N.IO;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
+namespace Jake2.Qcommon
+{
+    public class texinfo_t
+    {
+        public texinfo_t(byte[] cmod_base, int o, int len): this(ByteBuffer.Wrap(cmod_base, o, len).SetOrder(ByteOrder.LittleEndian))
+        {
+        }
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+        public texinfo_t(ByteBuffer bb)
+        {
+            byte[] str = new byte[32];
+            vecs[0] = new float[] {bb.GetSingle(), bb.GetSingle(), bb.GetSingle(), bb.GetSingle()};
+            vecs[1] = new float[] {bb.GetSingle(), bb.GetSingle(), bb.GetSingle(), bb.GetSingle()};
+            flags = bb.GetInt32();
+            value = bb.GetInt32();
+            bb.Get(str);
+            texture = Encoding.ASCII.GetString( str );
+            nexttexinfo = bb.GetInt32();
+        }
 
-See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-*/
-
-// Created on 02.01.2004 by RST.
-// $Id: texinfo_t.java,v 1.2 2004-07-08 15:58:46 hzi Exp $
-
-package jake2.qcommon;
-
-import jake2.util.Lib;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-
-public class texinfo_t {
-
-	// works fine.
-	public texinfo_t(byte[] cmod_base, int o, int len) {
-		this(ByteBuffer.wrap(cmod_base, o, len).order(ByteOrder.LITTLE_ENDIAN));
-	}
-
-	public texinfo_t(ByteBuffer bb) {
-
-		byte str[] = new byte[32];
-
-		vecs[0] = new float[] { bb.getFloat(), bb.getFloat(), bb.getFloat(), bb.getFloat()};
-		vecs[1] = new float[] { bb.getFloat(), bb.getFloat(), bb.getFloat(), bb.getFloat()};
-
-		flags = bb.getInt();
-		value = bb.getInt();
-
-		bb.get(str);
-		texture = new String(str, 0, Lib.strlen(str));
-		nexttexinfo = bb.getInt();
-	}
-
-	public static final int SIZE = 32 + 4 + 4 + 32 + 4;
-
-	//float			vecs[2][4];		// [s/t][xyz offset]
-	public float vecs[][] = {
-		 { 0, 0, 0, 0 },
-		 { 0, 0, 0, 0 }
-	};
-	public int flags; // miptex flags + overrides
-	public int value; // light emission, etc
-	//char			texture[32];	// texture name (textures/*.wal)
-	public String texture="";
-	public int nexttexinfo; // for animations, -1 = end of chain
+        public static readonly int SIZE = 32 + 4 + 4 + 32 + 4;
+        public float[][] vecs = new float[][]{ new float[]{0, 0, 0, 0}, new float[]{0, 0, 0, 0}};
+        public int flags;
+        public int value;
+        public string texture = "";
+        public int nexttexinfo;
+    }
 }

@@ -1,162 +1,332 @@
-/*
- Copyright (C) 1997-2001 Id Software, Inc.
+using Jake2.Game;
+using Jake2.Qcommon;
+using System;
+using System.IO;
 
- This program is free software; you can redistribute it and/or
- modify it under the terms of the GNU General Public License
- as published by the Free Software Foundation; either version 2
- of the License, or (at your option) any later version.
+namespace Jake2.Util
+{
+	public class QuakeFile : IDisposable
+	{
+		public FileStream Stream
+		{
+			get;
+			private set;
+		}
 
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+		private BinaryReader Input
+		{
+			get;
+			set;
+		}
 
- See the GNU General Public License for more details.
+		private BinaryWriter Output
+		{
+			get;
+			set;
+		}
 
- You should have received a copy of the GNU General Public License
- along with this program; if not, write to the Free Software
- Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+		public Int64 Length
+		{
+			get
+			{
+				return Stream.Length;
+			}
+		}
 
- */
+		public QuakeFile( String filename, FileAccess access )
+		{
+			var isWriting = access == FileAccess.Write || access == FileAccess.ReadWrite;
+			var isReading = access == FileAccess.Read || access == FileAccess.ReadWrite;
 
-// Created on 24.07.2004 by RST.
+			Stream = File.Open( filename, isWriting ? FileMode.OpenOrCreate : FileMode.Open, access );
 
-// $Id: QuakeFile.java,v 1.6 2005-11-20 22:18:34 salomo Exp $
+			if ( isReading )
+				Input = new BinaryReader( Stream );
 
-package jake2.util;
+			if ( isWriting )
+				Output = new BinaryWriter( Stream );
+		}
 
-import jake2.game.*;
-import jake2.qcommon.Com;
+		public virtual void Seek( Int64 offset )
+		{
+			if ( Input != null )
+				Input.BaseStream.Seek( offset, SeekOrigin.Begin );
+			if ( Output != null )
+				Output.BaseStream.Seek( offset, SeekOrigin.Begin );
+		}
 
-import java.io.*;
+		public virtual void Close( )
+		{
+			Input?.Close();
+			Output?.Close();
+			Stream.Close();
+		}
 
-/**
- * RandomAccessFile, but handles readString/WriteString specially and offers
- * other helper functions
- */
-public class QuakeFile extends RandomAccessFile {
+		public virtual void Dispose( )
+		{
+			Input?.Dispose();
+			Output?.Dispose();
+			Stream.Dispose();
+		}
 
-    /** Standard Constructor. */
-    public QuakeFile(String filename, String mode) throws FileNotFoundException {
-        super(filename, mode);
-    }
+		public virtual Boolean ReadBoolean( )
+		{
+			return Input.ReadBoolean();
+		}
 
-    /** Writes a Vector to a RandomAccessFile. */
-    public void writeVector(float v[]) throws IOException {
-        for (int n = 0; n < 3; n++)
-            writeFloat(v[n]);
-    }
+		public virtual Byte ReadByte( )
+		{
+			return Input.ReadByte();
+		}
 
-    /** Writes a Vector to a RandomAccessFile. */
-    public float[] readVector() throws IOException {
-        float res[] = { 0, 0, 0 };
-        for (int n = 0; n < 3; n++)
-            res[n] = readFloat();
+		public virtual Byte[] ReadBytes( Int32 count )
+		{
+			return Input.ReadBytes( count );
+		}
 
-        return res;
-    }
+		public virtual Char ReadChar( )
+		{
+			return Input.ReadChar();
+		}
 
-    /** Reads a length specified string from a file. */
-    public String readString() throws IOException {
-        int len = readInt();
+		public virtual Char[] ReadChars( Int32 count )
+		{
+			return Input.ReadChars( count );
+		}
 
-        if (len == -1)
-            return null;
+		public virtual Decimal ReadDecimal( )
+		{
+			return Input.ReadDecimal();
+		}
 
-        if (len == 0)
-            return "";
+		public virtual Double ReadDouble( )
+		{
+			return Input.ReadDouble();
+		}
 
-        byte bb[] = new byte[len];
+		public virtual Int16 ReadInt16( )
+		{
+			return Input.ReadInt16();
+		}
 
-        super.read(bb, 0, len);
+		public virtual Int32 ReadInt32( )
+		{
+			return Input.ReadInt32();
+		}
 
-        return new String(bb, 0, len);
-    }
+		public virtual Int64 ReadInt64( )
+		{
+			return Input.ReadInt16();
+		}
 
-    /** Writes a length specified string to a file. */
-    public void writeString(String s) throws IOException {
-        if (s == null) {
-            writeInt(-1);
-            return;
-        }
+		public virtual SByte ReadSByte( )
+		{
+			return Input.ReadSByte();
+		}
 
-        writeInt(s.length());
-        if (s.length() != 0)
-            writeBytes(s);
-    }
+		public virtual Single ReadSingle( )
+		{
+			return Input.ReadSingle();
+		}
 
-    /** Writes the edict reference. */
-    public void writeEdictRef(edict_t ent) throws IOException {
-        if (ent == null)
-            writeInt(-1);
-        else {
-            writeInt(ent.s.number);
-        }
-    }
+		public virtual String ReadString( )
+		{
+			return Input.ReadString();
+		}
 
-    /**
-     * Reads an edict index from a file and returns the edict.
-     */
+		public virtual UInt16 ReadUInt16( )
+		{
+			return Input.ReadUInt16();
+		}
 
-    public edict_t readEdictRef() throws IOException {
-        int i = readInt();
+		public virtual UInt32 ReadUInt32( )
+		{
+			return Input.ReadUInt32();
+		}
 
-        // handle -1
-        if (i < 0)
-            return null;
+		public virtual UInt64 ReadUInt64( )
+		{
+			return Input.ReadUInt64();
+		}
 
-        if (i > GameBase.g_edicts.length) {
-            Com.DPrintf("jake2: illegal edict num:" + i + "\n");
-            return null;
-        }
+		public virtual void Write( UInt64 value )
+		{
+			Output.Write( value );
+		}
 
-        // valid edict.
-        return GameBase.g_edicts[i];
-    }
+		public virtual void Write( UInt32 value )
+		{
+			Output.Write( value );
+		}
 
-    /** Writes the Adapter-ID to the file. */
-    public void writeAdapter(SuperAdapter a) throws IOException {
-        writeInt(3988);
-        if (a == null)
-            writeString(null);
-        else {
-            String str = a.getID();
-            if (a == null) {
-                Com.DPrintf("writeAdapter: invalid Adapter id for " + a + "\n");
-            }
-            writeString(str);
-        }
-    }
+		public virtual void Write( UInt16 value )
+		{
+			Output.Write( value );
+		}
 
-    /** Reads the adapter id and returns the adapter. */
-    public SuperAdapter readAdapter() throws IOException {
-        if (readInt() != 3988)
-            Com.DPrintf("wrong read position: readadapter 3988 \n");
+		public virtual void Write( String value )
+		{
+			Output.Write( value );
+		}
 
-        String id = readString();
+		public virtual void Write( Single value )
+		{
+			Output.Write( value );
+		}
 
-        if (id == null) {
-            // null adapter. :-)
-            return null;
-        }
+		public virtual void Write( SByte value )
+		{
+			Output.Write( value );
+		}
 
-        return SuperAdapter.getFromID(id);
-    }
+		public virtual void Write( Int64 value )
+		{
+			Output.Write( value );
+		}
 
-    /** Writes an item reference. */
-    public void writeItem(gitem_t item) throws IOException {
-        if (item == null)
-            writeInt(-1);
-        else
-            writeInt(item.index);
-    }
+		public virtual void Write( Int32 value )
+		{
+			Output.Write( value );
+		}
 
-    /** Reads the item index and returns the game item. */
-    public gitem_t readItem() throws IOException {
-        int ndx = readInt();
-        if (ndx == -1)
-            return null;
-        else
-            return GameItemList.itemlist[ndx];
-    }
+		public virtual void Write( Double value )
+		{
+			Output.Write( value );
+		}
 
+		public virtual void Write( Decimal value )
+		{
+			Output.Write( value );
+		}
+
+		public virtual void Write( Char[] chars, Int32 index, Int32 count )
+		{
+			Output.Write( chars, index, count );
+		}
+
+		public virtual void Write( Char[] chars )
+		{
+			Output.Write( chars );
+		}
+
+		public virtual void Write( Byte[] buffer, Int32 index, Int32 count )
+		{
+			Output.Write( buffer, index, count );
+		}
+
+		public virtual void Write( Byte[] buffer )
+		{
+			Output.Write( buffer );
+		}
+
+		public virtual void Write( Byte value )
+		{
+			Output.Write( value );
+		}
+
+		public virtual void Write( Boolean value )
+		{
+			Output.Write( value );
+		}
+
+		public virtual void Write( Int16 value )
+		{
+			Output.Write( value );
+		}
+
+		public virtual void Write( Char ch )
+		{
+			Output.Write( ch );
+		}
+
+		public virtual void WriteVector( Single[] v )
+		{
+			for ( var n = 0; n < 3; n++ )
+				Output.Write( v[n] );
+		}
+
+		public virtual Single[] ReadVector( )
+		{
+			Single[] res = new Single[] { 0, 0, 0 };
+			for ( var n = 0; n < 3; n++ )
+				res[n] = Input.ReadSingle();
+			return res;
+		}
+
+		public virtual void WriteEdictRef( edict_t ent )
+		{
+			if ( ent == null )
+				Output.Write( -1 );
+			else
+			{
+				Output.Write( ent.s.number );
+			}
+		}
+
+		public virtual edict_t ReadEdictRef( )
+		{
+			var i = Input.ReadInt32();
+			if ( i < 0 )
+				return null;
+			if ( i > GameBase.g_edicts.Length )
+			{
+				Com.DPrintf( "jake2: illegal edict num:" + i + "\\n" );
+				return null;
+			}
+
+			return GameBase.g_edicts[i];
+		}
+
+		public virtual void WriteAdapter( SuperAdapter a )
+		{
+			Output.Write( 3988 );
+			if ( a == null )
+				Write( ( String ) null );
+			else
+			{
+				var str = a.GetID();
+				if ( a == null )
+				{
+					Com.DPrintf( "writeAdapter: invalid Adapter id for " + a + "\\n" );
+				}
+
+				Write( str );
+			}
+		}
+
+		public virtual SuperAdapter ReadAdapter( )
+		{
+			if ( Input.ReadInt32() != 3988 )
+				Com.DPrintf( "wrong read position: readadapter 3988 \\n" );
+			var id = ReadString();
+			if ( id == null )
+			{
+				return null;
+			}
+
+			return SuperAdapter.GetFromID( id );
+		}
+
+		public virtual void WriteItem( gitem_t item )
+		{
+			if ( item == null )
+				Output.Write( -1 );
+			else
+				Output.Write( item.index );
+		}
+
+		public virtual gitem_t ReadItem( )
+		{
+			var ndx = Input.ReadInt32();
+			if ( ndx == -1 )
+				return null;
+			else
+				return GameItemList.itemlist[ndx];
+		}
+
+		public virtual int Read( Byte[] buffer, Int32 index, Int32 count )
+		{
+			return Input.Read( buffer, index, count );
+		}
+	}
 }

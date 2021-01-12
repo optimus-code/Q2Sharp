@@ -1,27 +1,28 @@
-/*
- * NanoTimer.java
- * Copyright (C) 2005
- * 
- * $Id: NanoTimer.java,v 1.1 2005-07-01 14:11:00 hzi Exp $
- */
-package jake2.sys;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
+namespace Jake2.Sys
+{
+    public class NanoTimer : Timer
+    {
+        private long base_renamed;
+        public NanoTimer( )
+        {
+            base_renamed = System.NanoTime();
+        }
 
-public class NanoTimer extends Timer {
+        public override long CurrentTimeMillis()
+        {
+            long time = System.NanoTime();
+            long delta = time - base_renamed;
+            if (delta < 0)
+            {
+                delta += Long.MAX_VALUE + 1;
+            }
 
-	private long base;
-
-	NanoTimer() {
-		base = System.nanoTime();
-	}
-	
-	public long currentTimeMillis() {
-		long time = System.nanoTime();
-		long delta = time - base;
-		if (delta < 0) {
-			delta += Long.MAX_VALUE + 1;
-		}
-		return (long)(delta * 0.000001);
-	}
-
+            return (long)(delta * 1E-06);
+        }
+    }
 }

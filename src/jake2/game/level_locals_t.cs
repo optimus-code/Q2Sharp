@@ -1,158 +1,100 @@
-/*
-Copyright (C) 1997-2001 Id Software, Inc.
+using Jake2.Util;
+using System;
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
-See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-*/
-
-// Created on 20.11.2003 by RST
-
-package jake2.game;
-
-import jake2.util.QuakeFile;
-
-import java.io.IOException;
-
-public class level_locals_t
+namespace Jake2.Game
 {
-	
-	//	this structure is cleared as each map is entered
-	//	it is read/written to the level.sav file for savegames
-	//
-	public int framenum;
-	public float time;
-
-	public String level_name= ""; // the descriptive name (Outer Base, etc)
-	public String mapname= ""; // the server name (base1, etc)
-	public String nextmap= ""; // go here when fraglimit is hit
-
-	// intermission state
-	public float intermissiontime; // time the intermission was started
-	public String changemap;
-	public boolean exitintermission;
-	public float[] intermission_origin= { 0, 0, 0 };
-	public float[] intermission_angle= { 0, 0, 0 };
-
-	public edict_t sight_client; // changed once each frame for coop games
-
-	public edict_t sight_entity;
-	public int sight_entity_framenum;
-	
-	public edict_t sound_entity;
-	public int sound_entity_framenum;
-	
-	public edict_t sound2_entity;
-	public int sound2_entity_framenum;
-
-	public int pic_health;
-
-	public int total_secrets;
-	public int found_secrets;
-
-	public int total_goals;
-	public int found_goals;
-
-	public int total_monsters;
-	public int killed_monsters;
-
-	public edict_t current_entity; // entity running from G_RunFrame
-	public int body_que; // dead bodies
-
-	public int power_cubes; // ugly necessity for coop
-
-	/** Writes the levellocales to the file.*/	
-	public void write(QuakeFile f) throws IOException  
+	public class level_locals_t
 	{
-		f.writeInt(framenum);
-		f.writeFloat(time);
-		f.writeString(level_name);
-		f.writeString(mapname);
-		f.writeString(nextmap);
-		f.writeFloat(intermissiontime);	
-		f.writeString(changemap);
-		f.writeBoolean(exitintermission);
-		f.writeVector(intermission_origin);
-		f.writeVector(intermission_angle);
- 		f.writeEdictRef(sight_client);
- 		
-		f.writeEdictRef(sight_entity);
-		f.writeInt(sight_entity_framenum);
-		
-		f.writeEdictRef(sound_entity);
-		f.writeInt(sound_entity_framenum);
-		f.writeEdictRef(sound2_entity);
-		f.writeInt(sound2_entity_framenum);
+		public Int32 framenum;
+		public Single time;
+		public String level_name = "";
+		public String mapname = "";
+		public String nextmap = "";
+		public Single intermissiontime;
+		public String changemap;
+		public Boolean exitintermission;
+		public Single[] intermission_origin = new Single[] { 0, 0, 0 };
+		public Single[] intermission_angle = new Single[] { 0, 0, 0 };
+		public edict_t sight_client;
+		public edict_t sight_entity;
+		public Int32 sight_entity_framenum;
+		public edict_t sound_entity;
+		public Int32 sound_entity_framenum;
+		public edict_t sound2_entity;
+		public Int32 sound2_entity_framenum;
+		public Int32 pic_health;
+		public Int32 total_secrets;
+		public Int32 found_secrets;
+		public Int32 total_goals;
+		public Int32 found_goals;
+		public Int32 total_monsters;
+		public Int32 killed_monsters;
+		public edict_t current_entity;
+		public Int32 body_que;
+		public Int32 power_cubes;
+		public virtual void Write( QuakeFile f )
+		{
+			f.Write( framenum );
+			f.Write( time );
+			f.Write( level_name );
+			f.Write( mapname );
+			f.Write( nextmap );
+			f.Write( intermissiontime );
+			f.Write( changemap );
+			f.Write( exitintermission );
+			f.WriteVector( intermission_origin );
+			f.WriteVector( intermission_angle );
+			f.WriteEdictRef( sight_client );
+			f.WriteEdictRef( sight_entity );
+			f.Write( sight_entity_framenum );
+			f.WriteEdictRef( sound_entity );
+			f.Write( sound_entity_framenum );
+			f.WriteEdictRef( sound2_entity );
+			f.Write( sound2_entity_framenum );
+			f.Write( pic_health );
+			f.Write( total_secrets );
+			f.Write( found_secrets );
+			f.Write( total_goals );
+			f.Write( found_goals );
+			f.Write( total_monsters );
+			f.Write( killed_monsters );
+			f.WriteEdictRef( current_entity );
+			f.Write( body_que );
+			f.Write( power_cubes );
+			f.Write( 4711 );
+		}
 
-		f.writeInt(pic_health);
-
-		f.writeInt(total_secrets);
-		f.writeInt(found_secrets);
-		
-		f.writeInt(total_goals);
-		f.writeInt(found_goals);
-		f.writeInt(total_monsters);
-		f.writeInt(killed_monsters);
-		
-		f.writeEdictRef(current_entity); 
-		f.writeInt(body_que); // dead bodies
-		f.writeInt(power_cubes); // ugly necessity for coop
-		
-		// rst's checker :-)		
-		f.writeInt(4711);
-	}
-	
-	/** Reads the level locals from the file. */
-	public void read(QuakeFile f) throws IOException
-	{
-		framenum = f.readInt();
-		time = f.readFloat();
-		level_name = f.readString();
-		mapname = f.readString();
-		nextmap = f.readString();
-		intermissiontime = f.readFloat();	
-		changemap = f.readString();
-		exitintermission = f.readBoolean();
-		intermission_origin = f.readVector();
-		intermission_angle = f.readVector();
- 		sight_client = f.readEdictRef();
- 		
-		sight_entity = f.readEdictRef();
-		sight_entity_framenum = f.readInt();
-		
-		sound_entity = f.readEdictRef();
-		sound_entity_framenum = f.readInt();
-		sound2_entity = f.readEdictRef();
-		sound2_entity_framenum = f.readInt();
-
-		pic_health = f.readInt();
-
-		total_secrets = f.readInt();
-		found_secrets = f.readInt();
-		
-		total_goals = f.readInt();
-		found_goals = f.readInt();
-		total_monsters = f.readInt();
-		killed_monsters = f.readInt();
-		
-		current_entity = f.readEdictRef(); 
-		body_que = f.readInt(); // dead bodies
-		power_cubes = f.readInt(); // ugly necessity for coop		
-		
-		// rst's checker :-)
-		if (f.readInt()!= 4711)
-			System.out.println("error in reading level_locals.");
+		public virtual void Read( QuakeFile f )
+		{
+			framenum = f.ReadInt32();
+			time = f.ReadSingle();
+			level_name = f.ReadString();
+			mapname = f.ReadString();
+			nextmap = f.ReadString();
+			intermissiontime = f.ReadSingle();
+			changemap = f.ReadString();
+			exitintermission = f.ReadBoolean();
+			intermission_origin = f.ReadVector();
+			intermission_angle = f.ReadVector();
+			sight_client = f.ReadEdictRef();
+			sight_entity = f.ReadEdictRef();
+			sight_entity_framenum = f.ReadInt32();
+			sound_entity = f.ReadEdictRef();
+			sound_entity_framenum = f.ReadInt32();
+			sound2_entity = f.ReadEdictRef();
+			sound2_entity_framenum = f.ReadInt32();
+			pic_health = f.ReadInt32();
+			total_secrets = f.ReadInt32();
+			found_secrets = f.ReadInt32();
+			total_goals = f.ReadInt32();
+			found_goals = f.ReadInt32();
+			total_monsters = f.ReadInt32();
+			killed_monsters = f.ReadInt32();
+			current_entity = f.ReadEdictRef();
+			body_que = f.ReadInt32();
+			power_cubes = f.ReadInt32();
+			if ( f.ReadInt32() != 4711 )
+				System.Diagnostics.Debug.WriteLine( "error in reading level_locals." );
+		}
 	}
 }

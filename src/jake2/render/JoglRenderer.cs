@@ -1,327 +1,374 @@
-/*
- * JoglRenderer.java
- * Copyright (C) 2003
- *
- * $Id: JoglRenderer.java,v 1.10 2006-12-12 13:02:25 cawe Exp $
- */
-/*
-Copyright (C) 1997-2001 Id Software, Inc.
+using Jake2.Client;
+using Jake2.Qcommon;
+using Jake2.Render.Opengl;
+using Jake2.Sys;
+using System;
+using System.Drawing;
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
+namespace Jake2.Render
+{
+	sealed class JoglRenderer : JoglDriver, Irefexport_t, IRef
+	{
+		public static readonly String DRIVER_NAME = "jogl";
+		private KBD kbd = new JOGLKBD();
+		private IRenderAPI impl;
+		static JoglRenderer( )
+		{
+			Renderer.Register( new JoglRenderer() );
+		}
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+		private JoglRenderer( )
+		{
+		}
 
-See the GNU General Public License for more details.
+		public override Boolean Init( Int32 vid_xpos, Int32 vid_ypos )
+		{
+			impl.SetGLDriver( this );
+			if ( !impl.R_Init( vid_xpos, vid_ypos ) )
+				return false;
+			UpdateScreen( new Anonymousxcommand_t( this ) );
+			return post_init;
+		}
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+		private sealed class Anonymousxcommand_t : xcommand_t
+		{
+			public Anonymousxcommand_t( JoglRenderer parent )
+			{
+				this.parent = parent;
+			}
 
-*/
-package jake2.render;
+			private readonly JoglRenderer parent;
+			public override void Execute( )
+			{
+				parent.post_init = parent.impl.R_Init2();
+			}
+		}
 
-import jake2.Defines;
-import jake2.client.refdef_t;
-import jake2.client.refexport_t;
-import jake2.qcommon.xcommand_t;
-import jake2.render.opengl.JoglDriver;
-import jake2.sys.JOGLKBD;
-import jake2.sys.KBD;
+		public override void Shutdown( )
+		{
+			impl.R_Shutdown();
+		}
 
-import java.awt.Dimension;
+		public void BeginRegistration( String map )
+		{
+			if ( contextInUse )
+			{
+				impl.R_BeginRegistration( map );
+			}
+			else
+			{
+				UpdateScreen( new Anonymousxcommand_t1( this, map ) );
+			}
+		}
 
-/**
- * JoglRenderer
- * 
- * @author cwei
- */
-final class JoglRenderer extends JoglDriver implements refexport_t, Ref {
+		private sealed class Anonymousxcommand_t1 : xcommand_t
+		{
+			String Map;
 
-	public static final String DRIVER_NAME = "jogl";
-    
-    	private KBD kbd = new JOGLKBD();
+			public Anonymousxcommand_t1( JoglRenderer parent, String map )
+			{
+				this.parent = parent;
+				this.Map = map;
+			}
 
-    	// is set from Renderer factory
-    	private RenderAPI impl;
+			private readonly JoglRenderer parent;
+			public override void Execute( )
+			{
+				parent.impl.R_BeginRegistration( Map );
+			}
+		}
 
-	static {
-		Renderer.register(new JoglRenderer());
-	};
+		private model_t model = null;
+		public model_t RegisterModel( String name )
+		{
+			if ( contextInUse )
+			{
+				return impl.R_RegisterModel( name );
+			}
+			else
+			{
+				UpdateScreen( new Anonymousxcommand_t2( this, name ) );
+				return model;
+			}
+		}
 
-	private JoglRenderer() {
-        // singleton
-	}
+		private sealed class Anonymousxcommand_t2 : xcommand_t
+		{
+			private String Name;
+			public Anonymousxcommand_t2( JoglRenderer parent, String name )
+			{
+				this.parent = parent;
+				this.Name = name;
+			}
 
-	// ============================================================================
-	// public interface for Renderer implementations
-	//
-	// refexport_t (ref.h)
-	// ============================================================================
+			private readonly JoglRenderer parent;
+			public override void Execute( )
+			{
+				parent.model = parent.impl.R_RegisterModel( Name );
+			}
+		}
 
+		private image_t image = null;
+		public image_t RegisterSkin( String name )
+		{
+			if ( contextInUse )
+			{
+				return impl.R_RegisterSkin( name );
+			}
+			else
+			{
+				UpdateScreen( new Anonymousxcommand_t3( this, name ) );
+				return image;
+			}
+		}
 
-    private boolean post_init = false;
-    
-    /** 
-	 * @see jake2.client.refexport_t#Init()
-	 */
-	public boolean Init(int vid_xpos, int vid_ypos) {
-        // init the OpenGL drivers
-        impl.setGLDriver(this);
-		// pre init
-		if (!impl.R_Init(vid_xpos, vid_ypos)) return false;
-		// calls the R_Init2() internally
-		updateScreen(new xcommand_t() {
-            public void execute() {
-                JoglRenderer.this.post_init = impl.R_Init2();        
-            }
-        });
-		// the result from R_Init2()
-		return post_init;
-	}
+		private sealed class Anonymousxcommand_t3 : xcommand_t
+		{
+			private String Name;
+			public Anonymousxcommand_t3( JoglRenderer parent, String name )
+			{
+				this.parent = parent;
+				this.Name = name;
+			}
 
-	/** 
-	 * @see jake2.client.refexport_t#Shutdown()
-	 */
-	public void Shutdown() {
-		impl.R_Shutdown();
-	}
+			private readonly JoglRenderer parent;
+			public override void Execute( )
+			{
+				parent.image = parent.impl.R_RegisterSkin( Name );
+			}
+		}
 
-	/** 
-	 * @see jake2.client.refexport_t#BeginRegistration(java.lang.String)
-	 */
-	public void BeginRegistration(final String map) {
-		if (contextInUse) {
-			impl.R_BeginRegistration(map);
-		} else {
-			updateScreen(new xcommand_t() {
-				public void execute() {
-					impl.R_BeginRegistration(map);
-				}
-			});
+		public image_t RegisterPic( String name )
+		{
+			if ( contextInUse )
+			{
+				return impl.Draw_FindPic( name );
+			}
+			else
+			{
+				UpdateScreen( new Anonymousxcommand_t4( this, name ) );
+				return image;
+			}
+		}
+
+		private sealed class Anonymousxcommand_t4 : xcommand_t
+		{
+			private String Name;
+			public Anonymousxcommand_t4( JoglRenderer parent, String name )
+			{
+				this.parent = parent;
+				this.Name = name;
+			}
+
+			private readonly JoglRenderer parent;
+			public override void Execute( )
+			{
+				parent.image = parent.impl.Draw_FindPic( Name );
+			}
+		}
+
+		public void SetSky( String name, Single rotate, Single[] axis )
+		{
+			if ( contextInUse )
+			{
+				impl.R_SetSky( name, rotate, axis );
+			}
+			else
+			{
+				UpdateScreen( new Anonymousxcommand_t5( this, name, rotate, axis ) );
+			}
+		}
+
+		private sealed class Anonymousxcommand_t5 : xcommand_t
+		{
+			String Name;
+			Single Rotate;
+			Single[] Axis;
+
+			public Anonymousxcommand_t5( JoglRenderer parent, String name, Single rotate, Single[] axis )
+			{
+				this.parent = parent;
+				this.Name = name;
+				this.Rotate = rotate;
+				this.Axis = axis;
+			}
+
+			private readonly JoglRenderer parent;
+			public override void Execute( )
+			{
+				parent.impl.R_SetSky( Name, Rotate, Axis );
+			}
+		}
+
+		public void EndRegistration( )
+		{
+			if ( contextInUse )
+			{
+				impl.R_EndRegistration();
+			}
+			else
+			{
+				UpdateScreen( new Anonymousxcommand_t6( this ) );
+			}
+		}
+
+		private sealed class Anonymousxcommand_t6 : xcommand_t
+		{
+			public Anonymousxcommand_t6( JoglRenderer parent )
+			{
+				this.parent = parent;
+			}
+
+			private readonly JoglRenderer parent;
+			public override void Execute( )
+			{
+				parent.impl.R_EndRegistration();
+			}
+		}
+
+		public void RenderFrame( refdef_t fd )
+		{
+			impl.R_RenderFrame( fd );
+		}
+
+		public void DrawGetPicSize( out Size dim, String name )
+		{
+			impl.Draw_GetPicSize( out dim, name );
+		}
+
+		public void DrawPic( Int32 x, Int32 y, String name )
+		{
+			impl.Draw_Pic( x, y, name );
+		}
+
+		public void DrawStretchPic( Int32 x, Int32 y, Int32 w, Int32 h, String name )
+		{
+			impl.Draw_StretchPic( x, y, w, h, name );
+		}
+
+		public void DrawChar( Int32 x, Int32 y, Int32 num )
+		{
+			if ( contextInUse )
+			{
+				impl.Draw_Char( x, y, num );
+			}
+			else
+			{
+				UpdateScreen( new Anonymousxcommand_t7( this, x, y, num ) );
+			}
+		}
+
+		private sealed class Anonymousxcommand_t7 : xcommand_t
+		{
+			Int32 X;
+			Int32 Y;
+			Int32 Num;
+
+			public Anonymousxcommand_t7( JoglRenderer parent, Int32 x, Int32 y, Int32 num )
+			{
+				this.parent = parent;
+				this.X = x;
+				this.Y = y;
+				this.Num = num;
+			}
+
+			private readonly JoglRenderer parent;
+			public override void Execute( )
+			{
+				parent.impl.Draw_Char( X, Y, Num );
+			}
+		}
+
+		public void DrawTileClear( Int32 x, Int32 y, Int32 w, Int32 h, String name )
+		{
+			impl.Draw_TileClear( x, y, w, h, name );
+		}
+
+		public void DrawFill( Int32 x, Int32 y, Int32 w, Int32 h, Int32 c )
+		{
+			impl.Draw_Fill( x, y, w, h, c );
+		}
+
+		public void DrawFadeScreen( )
+		{
+			impl.Draw_FadeScreen();
+		}
+
+		public void DrawStretchRaw( Int32 x, Int32 y, Int32 w, Int32 h, Int32 cols, Int32 rows, Byte[] data )
+		{
+			impl.Draw_StretchRaw( x, y, w, h, cols, rows, data );
+		}
+
+		public void CinematicSetPalette( Byte[] palette )
+		{
+			impl.R_SetPalette( palette );
+		}
+
+		public override void BeginFrame( Single camera_separation )
+		{
+			impl.R_BeginFrame( camera_separation );
+		}
+
+		public override void EndFrame( )
+		{
+			EndFrame();
+		}
+
+		public override void AppActivate( Boolean activate )
+		{
+			AppActivate( activate );
+		}
+
+		public override void Screenshot( )
+		{
+			if ( contextInUse )
+			{
+				impl.GL_ScreenShot_f();
+			}
+			else
+			{
+				UpdateScreen( new Anonymousxcommand_t8( this ) );
+			}
+		}
+
+		private sealed class Anonymousxcommand_t8 : xcommand_t
+		{
+			public Anonymousxcommand_t8( JoglRenderer parent )
+			{
+				this.parent = parent;
+			}
+
+			private readonly JoglRenderer parent;
+			public override void Execute( )
+			{
+				parent.impl.GL_ScreenShot_f();
+			}
+		}
+
+		public Int32 ApiVersion( )
+		{
+			return Defines.API_VERSION;
+		}
+
+		public KBD GetKeyboardHandler( )
+		{
+			return kbd;
+		}
+
+		public String GetName( )
+		{
+			return DRIVER_NAME;
+		}
+
+		public override String ToString( )
+		{
+			return DRIVER_NAME;
+		}
+
+		public Irefexport_t GetRefAPI( IRenderAPI renderer )
+		{
+			this.impl = renderer;
+			return this;
 		}
 	}
-	
-	private model_t model = null;
-	
-	/** 
-	 * @see jake2.client.refexport_t#RegisterModel(java.lang.String)
-	 */
-	public model_t RegisterModel(final String name) {
-		if (contextInUse) {
-			return impl.R_RegisterModel(name);
-		} else {
-			updateScreen(new xcommand_t() {
-				public void execute() {
-					JoglRenderer.this.model = impl.R_RegisterModel(name);
-				}
-			});
-			return model;
-		}
-	}
-
-	private image_t image = null;
-
-	/** 
-	 * @see jake2.client.refexport_t#RegisterSkin(java.lang.String)
-	 */
-	public image_t RegisterSkin(final String name) {
-		if (contextInUse) {
-			return impl.R_RegisterSkin(name);
-		} else {
-			updateScreen(new xcommand_t() {
-				public void execute() {
-					JoglRenderer.this.image = impl.R_RegisterSkin(name);
-				}
-			});
-			return image;
-		}
-	}
-	
-	/** 
-	 * @see jake2.client.refexport_t#RegisterPic(java.lang.String)
-	 */
-	public image_t RegisterPic(final String name) {
-		if (contextInUse) {
-			return impl.Draw_FindPic(name);
-		} else {
-			updateScreen(new xcommand_t() {
-				public void execute() {
-					JoglRenderer.this.image = impl.Draw_FindPic(name);
-				}
-			});
-			return image;
-		}
-	}
-
-	/** 
-	 * @see jake2.client.refexport_t#SetSky(java.lang.String, float, float[])
-	 */
-	public void SetSky(final String name, final float rotate, final float[] axis) {
-		if (contextInUse) {
-			impl.R_SetSky(name, rotate, axis);
-		} else {
-			updateScreen(new xcommand_t() {
-				public void execute() {
-					impl.R_SetSky(name, rotate, axis);
-				}
-			});
-		}
-	}
-
-	/** 
-	 * @see jake2.client.refexport_t#EndRegistration()
-	 */
-	public void EndRegistration() {
-		if (contextInUse) {
-			impl.R_EndRegistration();
-		} else {
-			updateScreen(new xcommand_t() {
-				public void execute() {
-					impl.R_EndRegistration();
-				}
-			});
-		}
-	}
-
-	/** 
-	 * @see jake2.client.refexport_t#RenderFrame(jake2.client.refdef_t)
-	 */
-	public void RenderFrame(refdef_t fd) {
-		impl.R_RenderFrame(fd);
-	}
-
-	/** 
-	 * @see jake2.client.refexport_t#DrawGetPicSize(java.awt.Dimension, java.lang.String)
-	 */
-	public void DrawGetPicSize(Dimension dim, String name) {
-		impl.Draw_GetPicSize(dim, name);
-	}
-
-	/** 
-	 * @see jake2.client.refexport_t#DrawPic(int, int, java.lang.String)
-	 */
-	public void DrawPic(int x, int y, String name) {
-		impl.Draw_Pic(x, y, name);
-	}
-
-	/** 
-	 * @see jake2.client.refexport_t#DrawStretchPic(int, int, int, int, java.lang.String)
-	 */
-	public void DrawStretchPic(int x, int y, int w, int h, String name) {
-		impl.Draw_StretchPic(x, y, w, h, name);
-	}
-    
-	/** 
-	 * @see jake2.client.refexport_t#DrawChar(int, int, int)
-	 */
-	public void DrawChar(final int x, final int y, final int num) {
-        if (contextInUse) {
-            impl.Draw_Char(x, y, num);;
-        } else {
-            updateScreen(new xcommand_t() {
-                public void execute() {
-                    impl.Draw_Char(x, y, num);
-                }
-            });
-        }
-	}
-
-	/** 
-	 * @see jake2.client.refexport_t#DrawTileClear(int, int, int, int, java.lang.String)
-	 */
-	public void DrawTileClear(int x, int y, int w, int h, String name) {
-		impl.Draw_TileClear(x, y, w, h, name);
-	}
-
-	/** 
-	 * @see jake2.client.refexport_t#DrawFill(int, int, int, int, int)
-	 */
-	public void DrawFill(int x, int y, int w, int h, int c) {
-		impl.Draw_Fill(x, y, w, h, c);
-	}
-
-	/** 
-	 * @see jake2.client.refexport_t#DrawFadeScreen()
-	 */
-	public void DrawFadeScreen() {
-		impl.Draw_FadeScreen();
-	}
-
-	/** 
-	 * @see jake2.client.refexport_t#DrawStretchRaw(int, int, int, int, int, int, byte[])
-	 */
-	public void DrawStretchRaw(int x, int y, int w, int h, int cols, int rows, byte[] data) {
-		impl.Draw_StretchRaw(x, y, w, h, cols, rows, data);
-	}
-
-	/** 
-	 * @see jake2.client.refexport_t#CinematicSetPalette(byte[])
-	 */
-	public void CinematicSetPalette(byte[] palette) {
-		impl.R_SetPalette(palette);
-	}
-
-	/** 
-	 * @see jake2.client.refexport_t#BeginFrame(float)
-	 */
-	public void BeginFrame(float camera_separation) {
-		impl.R_BeginFrame(camera_separation);
-	}
-
-	/** 
-	 * @see jake2.client.refexport_t#EndFrame()
-	 */
-	public void EndFrame() {
-		endFrame();
-	}
-
-	/** 
-	 * @see jake2.client.refexport_t#AppActivate(boolean)
-	 */
-	public void AppActivate(boolean activate) {
-		appActivate(activate);
-	}
-
-	public void screenshot() {
-		if (contextInUse) {
-			impl.GL_ScreenShot_f();
-		} else {
-			updateScreen(new xcommand_t() {
-				public void execute() {
-					impl.GL_ScreenShot_f();
-				}
-			});
-		}
-	}
-
-	public int apiVersion() {
-		return Defines.API_VERSION;
-	}
-    
-	public KBD getKeyboardHandler() {
-		return kbd;
-	}
-    	
-	// ============================================================================
-	// Ref interface
-	// ============================================================================
-
-	public String getName() {
-		return DRIVER_NAME;
-	}
-
-	public String toString() {
-		return DRIVER_NAME;
-	}
-
-	public refexport_t GetRefAPI(RenderAPI renderer) {
-        	this.impl = renderer;
-		return this;
-	}
-    
 }

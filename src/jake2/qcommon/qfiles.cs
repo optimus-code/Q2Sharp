@@ -1,691 +1,512 @@
-/*
- * qfiles.java
- * Copyright (C) 2003
- *
- * $Id: qfiles.java,v 1.6 2005-05-07 23:40:49 cawe Exp $
- */
-/*
-Copyright (C) 1997-2001 Id Software, Inc.
+using J2N.IO;
+using Jake2.Util;
+using System;
+using System.Text;
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-*/
-package jake2.qcommon;
-
-import jake2.Defines;
-
-import java.nio.*;
-
-/**
- * qfiles
- * 
- * @author cwei
- */
-public class qfiles {
-	//
-	// qfiles.h: quake file formats
-	// This file must be identical in the quake and utils directories
-	//
-
-	/*
-	========================================================================
-	
-	The .pak files are just a linear collapse of a directory tree
-	
-	========================================================================
-	*/
-
-	/*
-	========================================================================
-	
-	PCX files are used for as many images as possible
-	
-	========================================================================
-	*/
-	public static class pcx_t {
-
-		// size of byte arrays
-		static final int PALETTE_SIZE = 48;
-		static final int FILLER_SIZE = 58;
-
-		public byte manufacturer;
-		public byte version;
-		public byte encoding;
-		public byte bits_per_pixel;
-		public int xmin, ymin, xmax, ymax; // unsigned short
-		public int hres, vres; // unsigned short
-		public byte[] palette; //unsigned byte; size 48
-		public byte reserved;
-		public byte color_planes;
-		public int bytes_per_line; // unsigned short
-		public int palette_type; // unsigned short
-		public byte[] filler; // size 58
-		public ByteBuffer data; //unbounded data
-
-		public pcx_t(byte[] dataBytes) {
-			this(ByteBuffer.wrap(dataBytes));
-		}
-
-		public pcx_t(ByteBuffer b) {
-			// is stored as little endian
-			b.order(ByteOrder.LITTLE_ENDIAN);
-
-			// fill header
-			manufacturer = b.get();
-			version = b.get();
-			encoding = b.get();
-			bits_per_pixel = b.get();
-			xmin = b.getShort() & 0xffff;
-			ymin = b.getShort() & 0xffff;
-			xmax = b.getShort() & 0xffff;
-			ymax = b.getShort() & 0xffff;
-			hres = b.getShort() & 0xffff;
-			vres = b.getShort() & 0xffff;
-			b.get(palette = new byte[PALETTE_SIZE]);
-			reserved = b.get();
-			color_planes = b.get();
-			bytes_per_line = b.getShort() & 0xffff;
-			palette_type = b.getShort() & 0xffff;
-			b.get(filler = new byte[FILLER_SIZE]);
-
-			// fill data
-			data = b.slice();
-		}
-	}
-
-	/*
-	========================================================================
-	
-	TGA files are used for sky planes
-	
-	========================================================================
-	*/
-	public static class tga_t {
-		
-		// targa header
-		public int id_length, colormap_type, image_type; // unsigned char
-		public int colormap_index, colormap_length; // unsigned short
-		public int colormap_size; // unsigned char
-		public int x_origin, y_origin, width, height; // unsigned short
-		public int pixel_size, attributes; // unsigned char
-
-		public ByteBuffer data; // (un)compressed data
-
-		public tga_t(byte[] dataBytes) {
-			this(ByteBuffer.wrap(dataBytes));
-		}
-
-		public tga_t(ByteBuffer b) {
-			// is stored as little endian
-			b.order(ByteOrder.LITTLE_ENDIAN);
-
-			// fill header
-			id_length = b.get() & 0xFF;
-			colormap_type = b.get() & 0xFF;
-			image_type = b.get() & 0xFF;
-			colormap_index = b.getShort() & 0xFFFF;
-			colormap_length = b.getShort() & 0xFFFF;
-			colormap_size = b.get() & 0xFF;
-			x_origin = b.getShort() & 0xFFFF;
-			y_origin = b.getShort() & 0xFFFF;
-			width = b.getShort() & 0xFFFF;
-			height = b.getShort() & 0xFFFF;
-			pixel_size = b.get() & 0xFF;
-			attributes = b.get() & 0xFF;
-
-			// fill data
-			data = b.slice();
-		}			
-
-	}
-	
-	/*
-	========================================================================
-	
-	.MD2 triangle model file format
-	
-	========================================================================
-	*/
-	
-	public static final int IDALIASHEADER =	(('2'<<24)+('P'<<16)+('D'<<8)+'I');
-	public static final int ALIAS_VERSION = 8;
-	
-	public static final int MAX_TRIANGLES = 4096;
-	public static final int MAX_VERTS = 2048;
-	public static final int MAX_FRAMES = 512;
-	public static final int MAX_MD2SKINS = 32;
-	public static final int MAX_SKINNAME = 64;
-	
-	public static class dstvert_t {
-		public short s;
-		public short t;
-		
-		public dstvert_t(ByteBuffer b) {
-			s = b.getShort();
-			t = b.getShort();
-		}
-	}
-
-	public static class dtriangle_t {
-		public short index_xyz[] = { 0, 0, 0 };
-		public short index_st[] = { 0, 0, 0 };
-		
-		public dtriangle_t(ByteBuffer b) {
-			index_xyz[0] = b.getShort();
-			index_xyz[1] = b.getShort();
-			index_xyz[2] = b.getShort();
-			
-			index_st[0] = b.getShort();
-			index_st[1] = b.getShort();
-			index_st[2] = b.getShort();
-		}
-	}
-
-	public static final int DTRIVERTX_V0 =  0;
-	public static final int DTRIVERTX_V1 = 1;
-	public static final int DTRIVERTX_V2 = 2;
-	public static final int DTRIVERTX_LNI = 3;
-	public static final int DTRIVERTX_SIZE = 4;
-	
-	public static class  daliasframe_t {
-		public float[] scale = {0, 0, 0}; // multiply byte verts by this
-		public float[] translate = {0, 0, 0};	// then add this
-		public String name; // frame name from grabbing (size 16)
-		public int[] verts;	// variable sized
-		
-		public daliasframe_t(ByteBuffer b) {
-			scale[0] = b.getFloat();	scale[1] = b.getFloat();	scale[2] = b.getFloat();
-			translate[0] = b.getFloat(); translate[1] = b.getFloat(); translate[2] = b.getFloat();
-			byte[] nameBuf = new byte[16];
-			b.get(nameBuf);
-			name = new String(nameBuf).trim();
-		}
-	}
-	
-	//	   the glcmd format:
-	//	   a positive integer starts a tristrip command, followed by that many
-	//	   vertex structures.
-	//	   a negative integer starts a trifan command, followed by -x vertexes
-	//	   a zero indicates the end of the command list.
-	//	   a vertex consists of a floating point s, a floating point t,
-	//	   and an integer vertex index.
-	
-	public static class dmdl_t {
-		public int ident;
-		public int version;
-
-		public int skinwidth;
-		public int skinheight;
-		public int framesize; // byte size of each frame
-
-		public int num_skins;
-		public int num_xyz;
-		public int num_st; // greater than num_xyz for seams
-		public int num_tris;
-		public int num_glcmds; // dwords in strip/fan command list
-		public int num_frames;
-
-		public int ofs_skins; // each skin is a MAX_SKINNAME string
-		public int ofs_st; // byte offset from start for stverts
-		public int ofs_tris; // offset for dtriangles
-		public int ofs_frames; // offset for first frame
-		public int ofs_glcmds;
-		public int ofs_end; // end of file
-		
-		// wird extra gebraucht
-		public String[] skinNames;
-		public dstvert_t[] stVerts;
-		public dtriangle_t[] triAngles;
-		public int[] glCmds;
-		public daliasframe_t[] aliasFrames;
-		
-		
-		public dmdl_t(ByteBuffer b) {
-			ident = b.getInt();
-			version = b.getInt();
-
-			skinwidth = b.getInt();
-			skinheight = b.getInt();
-			framesize = b.getInt(); // byte size of each frame
-
-			num_skins = b.getInt();
-			num_xyz = b.getInt();
-			num_st = b.getInt(); // greater than num_xyz for seams
-			num_tris = b.getInt();
-			num_glcmds = b.getInt(); // dwords in strip/fan command list
-			num_frames = b.getInt();
-
-			ofs_skins = b.getInt(); // each skin is a MAX_SKINNAME string
-			ofs_st = b.getInt(); // byte offset from start for stverts
-			ofs_tris = b.getInt(); // offset for dtriangles
-			ofs_frames = b.getInt(); // offset for first frame
-			ofs_glcmds = b.getInt();
-			ofs_end = b.getInt(); // end of file
-		}
-
-		/*
-		 * new members for vertex array handling
-		 */
-		public FloatBuffer textureCoordBuf = null;
-		public IntBuffer vertexIndexBuf = null;
-		public int[] counts = null;
-		public IntBuffer[] indexElements = null;
-	}
-	
-	/*
-	========================================================================
-	
-	.SP2 sprite file format
-	
-	========================================================================
-	*/
-	// little-endian "IDS2"
-	public static final int IDSPRITEHEADER = (('2'<<24)+('S'<<16)+('D'<<8)+'I');
-	public static final int SPRITE_VERSION = 2;
-
-	public static class dsprframe_t {
-		public int width, height;
-		public int origin_x, origin_y; // raster coordinates inside pic
-		public String name; // name of pcx file (MAX_SKINNAME)
-		
-		public dsprframe_t(ByteBuffer b) {
-			width = b.getInt();
-			height = b.getInt();
-			origin_x = b.getInt();
-			origin_y = b.getInt();
-			
-			byte[] nameBuf = new byte[MAX_SKINNAME];
-			b.get(nameBuf);
-			name = new String(nameBuf).trim();
-		}
-	}
-
-	public static class dsprite_t {
-		public int ident;
-		public int version;
-		public int numframes;
-		public dsprframe_t frames[]; // variable sized
-		
-		public dsprite_t(ByteBuffer b) {
-			ident = b.getInt();
-			version = b.getInt();
-			numframes = b.getInt();
-			
-			frames = new dsprframe_t[numframes];
-			for (int i=0; i < numframes; i++) {
-				frames[i] = new dsprframe_t(b);	
+namespace Jake2.Qcommon
+{
+	public class qfiles
+	{
+		public class pcx_t
+		{
+			static readonly Int32 PALETTE_SIZE = 48;
+			static readonly Int32 FILLER_SIZE = 58;
+			public Byte manufacturer;
+			public Byte version;
+			public Byte encoding;
+			public Byte bits_per_pixel;
+			public Int32 xmin, ymin, xmax, ymax;
+			public Int32 hres, vres;
+			public Byte[] palette;
+			public Byte reserved;
+			public Byte color_planes;
+			public Int32 bytes_per_line;
+			public Int32 palette_type;
+			public Byte[] filler;
+			public ByteBuffer data;
+			public pcx_t( Byte[] dataBytes ) : this( ByteBuffer.Wrap( dataBytes ) )
+			{
 			}
-		}
-	}
-	
-	/*
-	==============================================================================
-	
-	  .WAL texture file format
-	
-	==============================================================================
-	*/
-	public static class miptex_t {
 
-		static final int MIPLEVELS = 4;
-		static final int NAME_SIZE = 32;
-
-		public String name; // char name[32];
-		public int width, height;
-		public int[] offsets = new int[MIPLEVELS]; // 4 mip maps stored
-		// next frame in animation chain
-		public String animname; //	char	animname[32];
-		public int flags;
-		public int contents;
-		public int value;
-
-		public miptex_t(byte[] dataBytes) {
-			this(ByteBuffer.wrap(dataBytes));
-		}
-
-		public miptex_t(ByteBuffer b) {
-			// is stored as little endian
-			b.order(ByteOrder.LITTLE_ENDIAN);
-
-			byte[] nameBuf = new byte[NAME_SIZE];
-			// fill header
-			b.get(nameBuf);
-			name = new String(nameBuf).trim();
-			width = b.getInt();
-			height = b.getInt();
-			offsets[0] = b.getInt();
-			offsets[1] = b.getInt();
-			offsets[2] = b.getInt();
-			offsets[3] = b.getInt();
-			b.get(nameBuf);
-			animname = new String(nameBuf).trim();
-			flags = b.getInt();
-			contents = b.getInt();
-			value = b.getInt();
-		}
-
-	}
-	
-	/*
-	==============================================================================
-	
-	  .BSP file format
-	
-	==============================================================================
-	*/
-
-	public static final int IDBSPHEADER = (('P'<<24)+('S'<<16)+('B'<<8)+'I');
-
-	// =============================================================================
-
-	public static class dheader_t {
-
-		public dheader_t(ByteBuffer bb) {
-			bb.order(ByteOrder.LITTLE_ENDIAN);
-			this.ident = bb.getInt();
-			this.version = bb.getInt();
-
-			for (int n = 0; n < Defines.HEADER_LUMPS; n++)
-				lumps[n] = new lump_t(bb.getInt(), bb.getInt());
-
-		}
-
-		public int ident;
-		public int version;
-		public lump_t lumps[] = new lump_t[Defines.HEADER_LUMPS];
-	}
-
-	public static class dmodel_t {
-
-		public dmodel_t(ByteBuffer bb) {
-			bb.order(ByteOrder.LITTLE_ENDIAN);
-
-			for (int j = 0; j < 3; j++)
-				mins[j] = bb.getFloat();
-
-			for (int j = 0; j < 3; j++)
-				maxs[j] = bb.getFloat();
-
-			for (int j = 0; j < 3; j++)
-				origin[j] = bb.getFloat();
-
-			headnode = bb.getInt();
-			firstface = bb.getInt();
-			numfaces = bb.getInt();
-		}
-		public float mins[] = { 0, 0, 0 };
-		public float maxs[] = { 0, 0, 0 };
-		public float origin[] = { 0, 0, 0 }; // for sounds or lights
-		public int headnode;
-		public int firstface, numfaces; // submodels just draw faces
-		// without walking the bsp tree
-
-		public static int SIZE = 3 * 4 + 3 * 4 + 3 * 4 + 4 + 8;
-	}
-	
-	public static class dvertex_t {
-		
-		public static final int SIZE = 3 * 4; // 3 mal 32 bit float 
-		
-		public float[] point = { 0, 0, 0 };
-		
-		public dvertex_t(ByteBuffer b) {
-			point[0] = b.getFloat();
-			point[1] = b.getFloat();
-			point[2] = b.getFloat();
-		}
-	}
-
-
-	// planes (x&~1) and (x&~1)+1 are always opposites
-	public static class dplane_t {
-
-		public dplane_t(ByteBuffer bb) {
-			bb.order(ByteOrder.LITTLE_ENDIAN);
-
-			normal[0] = (bb.getFloat());
-			normal[1] = (bb.getFloat());
-			normal[2] = (bb.getFloat());
-
-			dist = (bb.getFloat());
-			type = (bb.getInt());
-		}
-
-		public float normal[] = { 0, 0, 0 };
-		public float dist;
-		public int type; // PLANE_X - PLANE_ANYZ ?remove? trivial to regenerate
-
-		public static final int SIZE = 3 * 4 + 4 + 4;
-	}
-
-	public static class dnode_t {
-
-		public dnode_t(ByteBuffer bb) {
-
-			bb.order(ByteOrder.LITTLE_ENDIAN);
-			planenum = bb.getInt();
-
-			children[0] = bb.getInt();
-			children[1] = bb.getInt();
-
-			for (int j = 0; j < 3; j++)
-				mins[j] = bb.getShort();
-
-			for (int j = 0; j < 3; j++)
-				maxs[j] = bb.getShort();
-
-			firstface = bb.getShort() & 0xffff;
-			numfaces = bb.getShort() & 0xffff;
-
-		}
-
-		public int planenum;
-		public int children[] = { 0, 0 };
-		// negative numbers are -(leafs+1), not nodes
-		public short mins[] = { 0, 0, 0 }; // for frustom culling
-		public short maxs[] = { 0, 0, 0 };
-
-		/*
-		unsigned short	firstface;
-		unsigned short	numfaces;	// counting both sides
-		*/
-
-		public int firstface;
-		public int numfaces;
-
-		public static int SIZE = 4 + 8 + 6 + 6 + 2 + 2; // counting both sides
-	}
-	
-
-
-	// note that edge 0 is never used, because negative edge nums are used for
-	// counterclockwise use of the edge in a face
-	
-	public static class dedge_t {
-		// unsigned short v[2];
-		int v[] = { 0, 0 };
-	}
-	
-	public static class dface_t {
-		
-		public static final int SIZE =
-				4 * Defines.SIZE_OF_SHORT
-			+	2 * Defines.SIZE_OF_INT
-			+	Defines.MAXLIGHTMAPS;
-
-		//unsigned short	planenum;
-		public int planenum;
-		public short side;
-
-		public int firstedge; // we must support > 64k edges
-		public short numedges;
-		public short texinfo;
-
-		// lighting info
-		public byte styles[] = new byte[Defines.MAXLIGHTMAPS];
-		public int lightofs; // start of [numstyles*surfsize] samples
-		
-		public dface_t(ByteBuffer b) {
-			planenum = b.getShort() & 0xFFFF;
-			side = b.getShort();
-			firstedge = b.getInt();
-			numedges = b.getShort();
-			texinfo = b.getShort();
-			b.get(styles);
-			lightofs = b.getInt();
-		}
-		
-	}
-
-	public static class dleaf_t {
-
-		public dleaf_t(byte[] cmod_base, int i, int j) {
-			this(ByteBuffer.wrap(cmod_base, i, j).order(ByteOrder.LITTLE_ENDIAN));
-		}
-
-		public dleaf_t(ByteBuffer bb) {
-			contents = bb.getInt();
-			cluster = bb.getShort();
-			area = bb.getShort();
-
-			mins[0] = bb.getShort();
-			mins[1] = bb.getShort();
-			mins[2] = bb.getShort();
-
-			maxs[0] = bb.getShort();
-			maxs[1] = bb.getShort();
-			maxs[2] = bb.getShort();
-
-			firstleafface = bb.getShort() & 0xffff;
-			numleaffaces = bb.getShort() & 0xffff;
-
-			firstleafbrush = bb.getShort() & 0xffff;
-			numleafbrushes = bb.getShort() & 0xffff;
-		}
-
-		public static final int SIZE = 4 + 8 * 2 + 4 * 2;
-
-		public int contents; // OR of all brushes (not needed?)
-
-		public short cluster;
-		public short area;
-
-		public short mins[] = { 0, 0, 0 }; // for frustum culling
-		public short maxs[] = { 0, 0, 0 };
-
-		public int firstleafface; // unsigned short
-		public int numleaffaces; // unsigned short
-
-		public int firstleafbrush; // unsigned short
-		public int numleafbrushes; // unsigned short
-	}
-	
-	public static class dbrushside_t {
-
-		public dbrushside_t(ByteBuffer bb) {
-			bb.order(ByteOrder.LITTLE_ENDIAN);
-
-			planenum = bb.getShort() & 0xffff;
-			texinfo = bb.getShort();
-		}
-
-		//unsigned short planenum;
-		int planenum; // facing out of the leaf
-
-		short texinfo;
-
-		public static int SIZE = 4;
-	}
-	
-	public static class dbrush_t {
-
-		public dbrush_t(ByteBuffer bb) {
-			bb.order(ByteOrder.LITTLE_ENDIAN);
-			firstside = bb.getInt();
-			numsides = bb.getInt();
-			contents = bb.getInt();
-		}
-
-		public static int SIZE = 3 * 4;
-
-		int firstside;
-		int numsides;
-		int contents;
-	}
-
-	//	#define	ANGLE_UP	-1
-	//	#define	ANGLE_DOWN	-2
-
-	// the visibility lump consists of a header with a count, then
-	// byte offsets for the PVS and PHS of each cluster, then the raw
-	// compressed bit vectors
-	// #define	DVIS_PVS	0
-	// #define	DVIS_PHS	1
-
-	public static class dvis_t {
-
-		public dvis_t(ByteBuffer bb) {
-			numclusters = bb.getInt();
-			bitofs = new int[numclusters][2];
-
-			for (int i = 0; i < numclusters; i++) {
-				bitofs[i][0] = bb.getInt();
-				bitofs[i][1] = bb.getInt();
+			public pcx_t( ByteBuffer b )
+			{
+				b.Order = ByteOrder.LittleEndian;
+				manufacturer = b.Get();
+				version = b.Get();
+				encoding = b.Get();
+				bits_per_pixel = b.Get();
+				xmin = b.GetInt16() & 0xffff;
+				ymin = b.GetInt16() & 0xffff;
+				xmax = b.GetInt16() & 0xffff;
+				ymax = b.GetInt16() & 0xffff;
+				hres = b.GetInt16() & 0xffff;
+				vres = b.GetInt16() & 0xffff;
+				b.Get( palette = new Byte[PALETTE_SIZE] );
+				reserved = b.Get();
+				color_planes = b.Get();
+				bytes_per_line = b.GetInt16() & 0xffff;
+				palette_type = b.GetInt16() & 0xffff;
+				b.Get( filler = new Byte[FILLER_SIZE] );
+				data = b.Slice();
 			}
 		}
 
-		public int numclusters;
-		public int bitofs[][] = new int[8][2]; // bitofs[numclusters][2]	
-	}
-	
-	// each area has a list of portals that lead into other areas
-	// when portals are closed, other areas may not be visible or
-	// hearable even if the vis info says that it should be
-	
-	public static class dareaportal_t {
+		public class tga_t
+		{
+			public Int32 id_length, colormap_type, image_type;
+			public Int32 colormap_index, colormap_length;
+			public Int32 colormap_size;
+			public Int32 x_origin, y_origin, width, height;
+			public Int32 pixel_size, attributes;
+			public ByteBuffer data;
+			public tga_t( Byte[] dataBytes ) : this( ByteBuffer.Wrap( dataBytes ) )
+			{
+			}
 
-		public dareaportal_t() {
+			public tga_t( ByteBuffer b )
+			{
+				b.Order = ByteOrder.LittleEndian;
+				id_length = b.Get() & 0xFF;
+				colormap_type = b.Get() & 0xFF;
+				image_type = b.Get() & 0xFF;
+				colormap_index = b.GetInt16() & 0xFFFF;
+				colormap_length = b.GetInt16() & 0xFFFF;
+				colormap_size = b.Get() & 0xFF;
+				x_origin = b.GetInt16() & 0xFFFF;
+				y_origin = b.GetInt16() & 0xFFFF;
+				width = b.GetInt16() & 0xFFFF;
+				height = b.GetInt16() & 0xFFFF;
+				pixel_size = b.Get() & 0xFF;
+				attributes = b.Get() & 0xFF;
+				data = b.Slice();
+			}
 		}
 
-		public dareaportal_t(ByteBuffer bb) {
-			bb.order(ByteOrder.LITTLE_ENDIAN);
-			portalnum = bb.getInt();
-			otherarea = bb.getInt();
+		public const Int32 IDALIASHEADER = ( ( '2' << 24 ) + ( 'P' << 16 ) + ( 'D' << 8 ) + 'I' );
+		public const Int32 ALIAS_VERSION = 8;
+		public const Int32 MAX_TRIANGLES = 4096;
+		public const Int32 MAX_VERTS = 2048;
+		public const Int32 MAX_FRAMES = 512;
+		public const Int32 MAX_MD2SKINS = 32;
+		public const Int32 MAX_SKINNAME = 64;
+		public class dstvert_t
+		{
+			public Int16 s;
+			public Int16 t;
+			public dstvert_t( ByteBuffer b )
+			{
+				s = b.GetInt16();
+				t = b.GetInt16();
+			}
 		}
 
-		int portalnum;
-		int otherarea;
-
-		public static int SIZE = 8;
-	}
-
-	public static class darea_t {
-
-		public darea_t(ByteBuffer bb) {
-
-			bb.order(ByteOrder.LITTLE_ENDIAN);
-
-			numareaportals = bb.getInt();
-			firstareaportal = bb.getInt();
-
+		public class dtriangle_t
+		{
+			public Int16[] index_xyz = new Int16[] { 0, 0, 0 };
+			public Int16[] index_st = new Int16[] { 0, 0, 0 };
+			public dtriangle_t( ByteBuffer b )
+			{
+				index_xyz[0] = b.GetInt16();
+				index_xyz[1] = b.GetInt16();
+				index_xyz[2] = b.GetInt16();
+				index_st[0] = b.GetInt16();
+				index_st[1] = b.GetInt16();
+				index_st[2] = b.GetInt16();
+			}
 		}
-		int numareaportals;
-		int firstareaportal;
 
-		public static int SIZE = 8;
+		public static readonly Int32 DTRIVERTX_V0 = 0;
+		public static readonly Int32 DTRIVERTX_V1 = 1;
+		public static readonly Int32 DTRIVERTX_V2 = 2;
+		public static readonly Int32 DTRIVERTX_LNI = 3;
+		public static readonly Int32 DTRIVERTX_SIZE = 4;
+		public class daliasframe_t
+		{
+			public Single[] scale = new Single[] { 0, 0, 0 };
+			public Single[] translate = new Single[] { 0, 0, 0 };
+			public String name;
+			public Int32[] verts;
+			public daliasframe_t( ByteBuffer b )
+			{
+				scale[0] = b.GetSingle();
+				scale[1] = b.GetSingle();
+				scale[2] = b.GetSingle();
+				translate[0] = b.GetSingle();
+				translate[1] = b.GetSingle();
+				translate[2] = b.GetSingle();
+				Byte[] nameBuf = new Byte[16];
+				b.Get( nameBuf );
+				name = Encoding.ASCII.GetString( nameBuf ).Trim();
+			}
+		}
+
+		public class dmdl_t
+		{
+			public Int32 ident;
+			public Int32 version;
+			public Int32 skinwidth;
+			public Int32 skinheight;
+			public Int32 framesize;
+			public Int32 num_skins;
+			public Int32 num_xyz;
+			public Int32 num_st;
+			public Int32 num_tris;
+			public Int32 num_glcmds;
+			public Int32 num_frames;
+			public Int32 ofs_skins;
+			public Int32 ofs_st;
+			public Int32 ofs_tris;
+			public Int32 ofs_frames;
+			public Int32 ofs_glcmds;
+			public Int32 ofs_end;
+			public String[] skinNames;
+			public dstvert_t[] stVerts;
+			public dtriangle_t[] triAngles;
+			public Int32[] glCmds;
+			public daliasframe_t[] aliasFrames;
+			public dmdl_t( ByteBuffer b )
+			{
+				ident = b.GetInt32();
+				version = b.GetInt32();
+				skinwidth = b.GetInt32();
+				skinheight = b.GetInt32();
+				framesize = b.GetInt32();
+				num_skins = b.GetInt32();
+				num_xyz = b.GetInt32();
+				num_st = b.GetInt32();
+				num_tris = b.GetInt32();
+				num_glcmds = b.GetInt32();
+				num_frames = b.GetInt32();
+				ofs_skins = b.GetInt32();
+				ofs_st = b.GetInt32();
+				ofs_tris = b.GetInt32();
+				ofs_frames = b.GetInt32();
+				ofs_glcmds = b.GetInt32();
+				ofs_end = b.GetInt32();
+			}
+
+			public SingleBuffer textureCoordBuf = null;
+			public Int32Buffer vertexIndexBuf = null;
+			public Int32[] counts = null;
+			public Int32Buffer[] indexElements = null;
+		}
+
+		public const Int32 IDSPRITEHEADER = ( ( '2' << 24 ) + ( 'S' << 16 ) + ( 'D' << 8 ) + 'I' );
+		public const Int32 SPRITE_VERSION = 2;
+		public class dsprframe_t
+		{
+			public Int32 width, height;
+			public Int32 origin_x, origin_y;
+			public String name;
+			public dsprframe_t( ByteBuffer b )
+			{
+				width = b.GetInt32();
+				height = b.GetInt32();
+				origin_x = b.GetInt32();
+				origin_y = b.GetInt32();
+				Byte[] nameBuf = new Byte[MAX_SKINNAME];
+				b.Get( nameBuf );
+				name = Encoding.ASCII.GetString( nameBuf ).Trim();
+			}
+		}
+
+		public class dsprite_t
+		{
+			public Int32 ident;
+			public Int32 version;
+			public Int32 numframes;
+			public dsprframe_t[] frames;
+			public dsprite_t( ByteBuffer b )
+			{
+				ident = b.GetInt32();
+				version = b.GetInt32();
+				numframes = b.GetInt32();
+				frames = new dsprframe_t[numframes];
+				for ( var i = 0; i < numframes; i++ )
+				{
+					frames[i] = new dsprframe_t( b );
+				}
+			}
+		}
+
+		public class miptex_t
+		{
+			static readonly Int32 MIPLEVELS = 4;
+			static readonly Int32 NAME_SIZE = 32;
+			public String name;
+			public Int32 width, height;
+			public Int32[] offsets = new Int32[MIPLEVELS];
+			public String animname;
+			public Int32 flags;
+			public Int32 contents;
+			public Int32 value;
+			public miptex_t( Byte[] dataBytes ) : this( ByteBuffer.Wrap( dataBytes ) )
+			{
+			}
+
+			public miptex_t( ByteBuffer b )
+			{
+				b.Order = ByteOrder.LittleEndian;
+				Byte[] nameBuf = new Byte[NAME_SIZE];
+				b.Get( nameBuf );
+				name = Encoding.ASCII.GetString( nameBuf ).Trim();
+				width = b.GetInt32();
+				height = b.GetInt32();
+				offsets[0] = b.GetInt32();
+				offsets[1] = b.GetInt32();
+				offsets[2] = b.GetInt32();
+				offsets[3] = b.GetInt32();
+				b.Get( nameBuf );
+				animname = Encoding.ASCII.GetString( nameBuf ).Trim();
+				flags = b.GetInt32();
+				contents = b.GetInt32();
+				value = b.GetInt32();
+			}
+		}
+
+		public const Int32 IDBSPHEADER = ( ( 'P' << 24 ) + ( 'S' << 16 ) + ( 'B' << 8 ) + 'I' );
+		public class dheader_t
+		{
+			public dheader_t( ByteBuffer bb )
+			{
+				bb.Order = ByteOrder.LittleEndian;
+				this.ident = bb.GetInt32();
+				this.version = bb.GetInt32();
+				for ( var n = 0; n < Defines.HEADER_LUMPS; n++ )
+					lumps[n] = new lump_t( bb.GetInt32(), bb.GetInt32() );
+			}
+
+			public Int32 ident;
+			public Int32 version;
+			public lump_t[] lumps = new lump_t[Defines.HEADER_LUMPS];
+		}
+
+		public class dmodel_t
+		{
+			public dmodel_t( ByteBuffer bb )
+			{
+				bb.Order = ByteOrder.LittleEndian;
+				for ( var j = 0; j < 3; j++ )
+					mins[j] = bb.GetSingle();
+				for ( var j = 0; j < 3; j++ )
+					maxs[j] = bb.GetSingle();
+				for ( var j = 0; j < 3; j++ )
+					origin[j] = bb.GetSingle();
+				headnode = bb.GetInt32();
+				firstface = bb.GetInt32();
+				numfaces = bb.GetInt32();
+			}
+
+			public Single[] mins = new Single[] { 0, 0, 0 };
+			public Single[] maxs = new Single[] { 0, 0, 0 };
+			public Single[] origin = new Single[] { 0, 0, 0 };
+			public Int32 headnode;
+			public Int32 firstface, numfaces;
+			public static Int32 SIZE = 3 * 4 + 3 * 4 + 3 * 4 + 4 + 8;
+		}
+
+		public class dvertex_t
+		{
+			public static readonly Int32 SIZE = 3 * 4;
+			public Single[] point = new Single[] { 0, 0, 0 };
+			public dvertex_t( ByteBuffer b )
+			{
+				point[0] = b.GetSingle();
+				point[1] = b.GetSingle();
+				point[2] = b.GetSingle();
+			}
+		}
+
+		public class dplane_t
+		{
+			public dplane_t( ByteBuffer bb )
+			{
+				bb.Order = ByteOrder.LittleEndian;
+				normal[0] = ( bb.GetSingle() );
+				normal[1] = ( bb.GetSingle() );
+				normal[2] = ( bb.GetSingle() );
+				dist = ( bb.GetSingle() );
+				type = ( bb.GetInt32() );
+			}
+
+			public Single[] normal = new Single[] { 0, 0, 0 };
+			public Single dist;
+			public Int32 type;
+			public static readonly Int32 SIZE = 3 * 4 + 4 + 4;
+		}
+
+		public class dnode_t
+		{
+			public dnode_t( ByteBuffer bb )
+			{
+				bb.Order = ByteOrder.LittleEndian;
+				planenum = bb.GetInt32();
+				children[0] = bb.GetInt32();
+				children[1] = bb.GetInt32();
+				for ( var j = 0; j < 3; j++ )
+					mins[j] = bb.GetInt16();
+				for ( var j = 0; j < 3; j++ )
+					maxs[j] = bb.GetInt16();
+				firstface = bb.GetInt16() & 0xffff;
+				numfaces = bb.GetInt16() & 0xffff;
+			}
+
+			public Int32 planenum;
+			public Int32[] children = new Int32[] { 0, 0 };
+			public Int16[] mins = new Int16[] { 0, 0, 0 };
+			public Int16[] maxs = new Int16[] { 0, 0, 0 };
+			public Int32 firstface;
+			public Int32 numfaces;
+			public static Int32 SIZE = 4 + 8 + 6 + 6 + 2 + 2;
+		}
+
+		public class dedge_t
+		{
+			Int32[] v = new[] { 0, 0 };
+		}
+
+		public class dface_t
+		{
+			public static readonly Int32 SIZE = 4 * Defines.SIZE_OF_SHORT + 2 * Defines.SIZE_OF_INT + Defines.MAXLIGHTMAPS;
+			public Int32 planenum;
+			public Int16 side;
+			public Int32 firstedge;
+			public Int16 numedges;
+			public Int16 texinfo;
+			public Byte[] styles = new Byte[Defines.MAXLIGHTMAPS];
+			public Int32 lightofs;
+			public dface_t( ByteBuffer b )
+			{
+				planenum = b.GetInt16() & 0xFFFF;
+				side = b.GetInt16();
+				firstedge = b.GetInt32();
+				numedges = b.GetInt16();
+				texinfo = b.GetInt16();
+				b.Get( styles );
+				lightofs = b.GetInt32();
+			}
+		}
+
+		public class dleaf_t
+		{
+			public dleaf_t( Byte[] cmod_base, Int32 i, Int32 j )
+			{
+				var bb = ByteBuffer.Wrap( cmod_base, i, j );
+				bb.Order = ByteOrder.LittleEndian;
+				Setup( bb );
+			}
+
+			public dleaf_t( ByteBuffer bb )
+			{
+				Setup( bb );
+			}
+
+			private void Setup( ByteBuffer bb )
+			{
+				contents = bb.GetInt32();
+				cluster = bb.GetInt16();
+				area = bb.GetInt16();
+				mins[0] = bb.GetInt16();
+				mins[1] = bb.GetInt16();
+				mins[2] = bb.GetInt16();
+				maxs[0] = bb.GetInt16();
+				maxs[1] = bb.GetInt16();
+				maxs[2] = bb.GetInt16();
+				firstleafface = bb.GetInt16() & 0xffff;
+				numleaffaces = bb.GetInt16() & 0xffff;
+				firstleafbrush = bb.GetInt16() & 0xffff;
+				numleafbrushes = bb.GetInt16() & 0xffff;
+			}
+
+			public static readonly Int32 SIZE = 4 + 8 * 2 + 4 * 2;
+			public Int32 contents;
+			public Int16 cluster;
+			public Int16 area;
+			public Int16[] mins = new Int16[] { 0, 0, 0 };
+			public Int16[] maxs = new Int16[] { 0, 0, 0 };
+			public Int32 firstleafface;
+			public Int32 numleaffaces;
+			public Int32 firstleafbrush;
+			public Int32 numleafbrushes;
+		}
+
+		public class dbrushside_t
+		{
+			public dbrushside_t( ByteBuffer bb )
+			{
+				bb.Order = ByteOrder.LittleEndian;
+				planenum = bb.GetInt16() & 0xffff;
+				texinfo = bb.GetInt16();
+			}
+
+			public Int32 planenum;
+			public Int16 texinfo;
+			public static Int32 SIZE = 4;
+		}
+
+		public class dbrush_t
+		{
+			public dbrush_t( ByteBuffer bb )
+			{
+				bb.Order = ByteOrder.LittleEndian;
+				firstside = bb.GetInt32();
+				numsides = bb.GetInt32();
+				contents = bb.GetInt32();
+			}
+
+			public static Int32 SIZE = 3 * 4;
+			public Int32 firstside;
+			public Int32 numsides;
+			public Int32 contents;
+		}
+
+		public class dvis_t
+		{
+			public dvis_t( ByteBuffer bb )
+			{
+				numclusters = bb.GetInt32();
+				bitofs = Lib.CreateJaggedArray<Int32[][]>( numclusters, 2 );
+				for ( var i = 0; i < numclusters; i++ )
+				{
+					bitofs[i][0] = bb.GetInt32();
+					bitofs[i][1] = bb.GetInt32();
+				}
+			}
+
+			public Int32 numclusters;
+			public Int32[][] bitofs = Lib.CreateJaggedArray<Int32[][]>( 8, 2 );
+		}
+
+		public class dareaportal_t
+		{
+			public dareaportal_t( )
+			{
+			}
+
+			public dareaportal_t( ByteBuffer bb )
+			{
+				bb.Order = ByteOrder.LittleEndian;
+				portalnum = bb.GetInt32();
+				otherarea = bb.GetInt32();
+			}
+
+			public Int32 portalnum;
+			public Int32 otherarea;
+			public static Int32 SIZE = 8;
+		}
+
+		public class darea_t
+		{
+			public darea_t( ByteBuffer bb )
+			{
+				bb.Order = ByteOrder.LittleEndian;
+				numareaportals = bb.GetInt32();
+				firstareaportal = bb.GetInt32();
+			}
+
+			public Int32 numareaportals;
+			public Int32 firstareaportal;
+			public static Int32 SIZE = 8;
+		}
 	}
-
 }

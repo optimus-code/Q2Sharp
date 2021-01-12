@@ -1,183 +1,124 @@
-/*
- * DummyRenderer.java
- * Copyright (C) 2003
- *
- * $Id: DummyRenderer.java,v 1.2 2005-02-07 22:37:55 cawe Exp $
- */
- 
-package jake2.render;
+using Jake2.Client;
+using Jake2.Qcommon;
+using Jake2.Sys;
+using OpenTK.Windowing.GraphicsLibraryFramework;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Text;
 
-import java.awt.Dimension;
-import java.awt.DisplayMode;
+namespace Jake2.Render
+{
+    public class DummyRenderer : Irefexport_t
+    {
+        public virtual bool Init(int vid_xpos, int vid_ypos)
+        {
+            return false;
+        }
 
-import jake2.client.refdef_t;
-import jake2.client.refexport_t;
-import jake2.qcommon.xcommand_t;
-import jake2.sys.KBD;
+        public virtual void Shutdown()
+        {
+        }
 
-/**
- * DummyRenderer
- * 
- * @author cwei
- */
-public class DummyRenderer implements refexport_t {
+        public virtual void BeginRegistration(string map)
+        {
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#Init(int, int)
-	 */
-	public boolean Init(int vid_xpos, int vid_ypos) {
-		return false;
-	}
+        public virtual model_t RegisterModel(string name)
+        {
+            return null;
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#Shutdown()
-	 */
-	public void Shutdown() {
-	}
+        public virtual image_t RegisterSkin(string name)
+        {
+            return null;
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#BeginRegistration(java.lang.String)
-	 */
-	public void BeginRegistration(String map) {
-	}
+        public virtual image_t RegisterPic(string name)
+        {
+            return null;
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#RegisterModel(java.lang.String)
-	 */
-	public model_t RegisterModel(String name) {
-		return null;
-	}
+        public virtual void SetSky(string name, float rotate, float[] axis)
+        {
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#RegisterSkin(java.lang.String)
-	 */
-	public image_t RegisterSkin(String name) {
-		return null;
-	}
+        public virtual void EndRegistration()
+        {
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#RegisterPic(java.lang.String)
-	 */
-	public image_t RegisterPic(String name) {
-		return null;
-	}
+        public virtual void RenderFrame(refdef_t fd)
+        {
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#SetSky(java.lang.String, float, float[])
-	 */
-	public void SetSky(String name, float rotate, float[] axis) {
-	}
+        public virtual void DrawGetPicSize( out Size dim, string name)
+        {
+            dim = default;
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#EndRegistration()
-	 */
-	public void EndRegistration() {
-	}
+        public virtual void DrawPic(int x, int y, string name)
+        {
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#RenderFrame(jake2.client.refdef_t)
-	 */
-	public void RenderFrame(refdef_t fd) {
-	}
+        public virtual void DrawStretchPic(int x, int y, int w, int h, string name)
+        {
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#DrawGetPicSize(java.awt.Dimension, java.lang.String)
-	 */
-	public void DrawGetPicSize(Dimension dim, String name) {
-	}
+        public virtual void DrawChar(int x, int y, int num)
+        {
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#DrawPic(int, int, java.lang.String)
-	 */
-	public void DrawPic(int x, int y, String name) {
-	}
+        public virtual void DrawTileClear(int x, int y, int w, int h, string name)
+        {
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#DrawStretchPic(int, int, int, int, java.lang.String)
-	 */
-	public void DrawStretchPic(int x, int y, int w, int h, String name) {
-	}
+        public virtual void DrawFill(int x, int y, int w, int h, int c)
+        {
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#DrawChar(int, int, int)
-	 */
-	public void DrawChar(int x, int y, int num) {
-	}
+        public virtual void DrawFadeScreen()
+        {
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#DrawTileClear(int, int, int, int, java.lang.String)
-	 */
-	public void DrawTileClear(int x, int y, int w, int h, String name) {
-	}
+        public virtual void DrawStretchRaw(int x, int y, int w, int h, int cols, int rows, byte[] data)
+        {
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#DrawFill(int, int, int, int, int)
-	 */
-	public void DrawFill(int x, int y, int w, int h, int c) {
-	}
+        public virtual void CinematicSetPalette(byte[] palette)
+        {
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#DrawFadeScreen()
-	 */
-	public void DrawFadeScreen() {
-	}
+        public virtual void BeginFrame(float camera_separation)
+        {
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#DrawStretchRaw(int, int, int, int, int, int, byte[])
-	 */
-	public void DrawStretchRaw(int x, int y, int w, int h, int cols, int rows, byte[] data) {
-	}
+        public virtual void EndFrame()
+        {
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#CinematicSetPalette(byte[])
-	 */
-	public void CinematicSetPalette(byte[] palette) {
-	}
+        public virtual void AppActivate(bool activate)
+        {
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#BeginFrame(float)
-	 */
-	public void BeginFrame(float camera_separation) {
-	}
+        public virtual void UpdateScreen(xcommand_t callback)
+        {
+            callback.Execute();
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#EndFrame()
-	 */
-	public void EndFrame() {
-	}
+        public virtual int ApiVersion()
+        {
+            return 0;
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#AppActivate(boolean)
-	 */
-	public void AppActivate(boolean activate) {
-	}
+        public virtual VideoMode[] GetModeList()
+        {
+            return null;
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#updateScreen(jake2.qcommon.xcommand_t)
-	 */
-	public void updateScreen(xcommand_t callback) {
-	    callback.execute();
-	}
-
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#apiVersion()
-	 */
-	public int apiVersion() {
-		return 0;
-	}
-
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#getModeList()
-	 */
-	public DisplayMode[] getModeList() {
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see jake2.client.refexport_t#getKeyboardHandler()
-	 */
-	public KBD getKeyboardHandler() {
-		return null;
-	}
-
+        public virtual KBD GetKeyboardHandler()
+        {
+            return null;
+        }
+    }
 }

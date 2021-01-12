@@ -1,1329 +1,930 @@
-/*
- * Surf.java
- * Copyright (C) 2003
- *
- * $Id: Surf.java,v 1.3 2006-11-21 02:22:19 cawe Exp $
- */
-/*
-Copyright (C) 1997-2001 Id Software, Inc.
+using J2N.IO;
+using Jake2.Client;
+using Jake2.Game;
+using Jake2.Qcommon;
+using Jake2.Util;
+using OpenTK.Graphics.OpenGL;
+using Q2Sharp.util;
+using System;
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-*/
-package jake2.render.fast;
-
-import jake2.Defines;
-import jake2.client.*;
-import jake2.game.cplane_t;
-import jake2.qcommon.Com;
-import jake2.render.*;
-import jake2.util.Lib;
-import jake2.util.Math3D;
-
-import java.nio.*;
-import java.util.Arrays;
-
-/**
- * Surf
- *  
- * @author cwei
- */
-public abstract class Surf extends Draw {
-
-	// GL_RSURF.C: surface-related refresh code
-	float[] modelorg = {0, 0, 0};		// relative to viewpoint
-
-	msurface_t	r_alpha_surfaces;
-
-	static final int DYNAMIC_LIGHT_WIDTH = 128;
-	static final int DYNAMIC_LIGHT_HEIGHT = 128;
-
-	static final int LIGHTMAP_BYTES = 4;
-
-	static final int BLOCK_WIDTH = 128;
-	static final int BLOCK_HEIGHT = 128;
-
-	static final int MAX_LIGHTMAPS = 128;
-
-	int c_visible_lightmaps;
-	int c_visible_textures;
-
-	static final int GL_LIGHTMAP_FORMAT = GL_RGBA;
-
-	static class gllightmapstate_t 
+namespace Jake2.Render.Fast
+{
+	public abstract class Surf : Draw
 	{
-		int internal_format;
-		int current_lightmap_texture;
-
-		msurface_t[] lightmap_surfaces = new msurface_t[MAX_LIGHTMAPS];
-		int[] allocated = new int[BLOCK_WIDTH];
-
-		// the lightmap texture data needs to be kept in
-		// main memory so texsubimage can update properly
-		//byte[] lightmap_buffer = new byte[4 * BLOCK_WIDTH * BLOCK_HEIGHT];
-		IntBuffer lightmap_buffer = Lib.newIntBuffer(BLOCK_WIDTH * BLOCK_HEIGHT, ByteOrder.LITTLE_ENDIAN);
-				
-		public gllightmapstate_t() {
-			for (int i = 0; i < MAX_LIGHTMAPS; i++)
-				lightmap_surfaces[i] = new msurface_t();
-		}
-		
-		public void clearLightmapSurfaces() {
-			for (int i = 0; i < MAX_LIGHTMAPS; i++)
-				// TODO lightmap_surfaces[i].clear();
-				lightmap_surfaces[i] = new msurface_t();
-		}
-		
-	} 
-
-	gllightmapstate_t gl_lms = new gllightmapstate_t();
-
-	// Model.java
-	abstract byte[] Mod_ClusterPVS(int cluster, model_t model);
-	// Warp.java
-	abstract void R_DrawSkyBox();
-	abstract void R_AddSkySurface(msurface_t surface);
-	abstract void R_ClearSkyBox();
-	abstract void EmitWaterPolys(msurface_t fa);
-	// Light.java
-	abstract void R_MarkLights (dlight_t light, int bit, mnode_t node);
-	abstract void R_SetCacheState( msurface_t surf );
-	abstract void R_BuildLightMap(msurface_t surf, IntBuffer dest, int stride);
-
-	/*
-	=============================================================
-
-		BRUSH MODELS
-
-	=============================================================
-	*/
-
-	/**
-	 * R_TextureAnimation
-	 * Returns the proper texture for a given time and base texture
-	 */
-	image_t R_TextureAnimation(mtexinfo_t tex)
-	{
-		if (tex.next == null)
-			return tex.image;
-
-		int c = currententity.frame % tex.numframes;
-		while (c != 0)
+		public Single[] modelorg = new Single[] { 0, 0, 0 };
+		public msurface_t r_alpha_surfaces;
+		public const Int32 DYNAMIC_LIGHT_WIDTH = 128;
+		public const Int32 DYNAMIC_LIGHT_HEIGHT = 128;
+		public const Int32 LIGHTMAP_BYTES = 4;
+		public new const Int32 BLOCK_WIDTH = 128;
+		public new const Int32 BLOCK_HEIGHT = 128;
+		public const Int32 MAX_LIGHTMAPS = 128;
+		public static readonly PixelFormat GL_LIGHTMAP_FORMAT = PixelFormat.Rgba;
+		public class gllightmapstate_t
 		{
-			tex = tex.next;
-			c--;
-		}
+			public PixelInternalFormat internal_format;
+			public Int32 current_lightmap_texture;
+			public msurface_t[] lightmap_surfaces = new msurface_t[MAX_LIGHTMAPS];
+			public Int32[] allocated = new Int32[BLOCK_WIDTH];
+			public Int32Buffer lightmap_buffer = Lib.NewInt32Buffer( BLOCK_WIDTH * BLOCK_HEIGHT, ByteOrder.LittleEndian );
+			public gllightmapstate_t( )
+			{
+				for ( var i = 0; i < MAX_LIGHTMAPS; i++ )
+					lightmap_surfaces[i] = new msurface_t();
+			}
 
-		return tex.image;
-	}
-
-	/**
-	 * DrawGLPoly
-	 */
-	void DrawGLPoly(glpoly_t p)
-	{
-		gl.glDrawArrays(GL_POLYGON, p.pos, p.numverts);
-	}
-
-	/**
-	 * DrawGLFlowingPoly
-	 * version that handles scrolling texture
-	 */
-	void DrawGLFlowingPoly(glpoly_t p)
-	{
-		float scroll = -64 * ( (r_newrefdef.time / 40.0f) - (int)(r_newrefdef.time / 40.0f) );
-		if(scroll == 0.0f)
-			scroll = -64.0f;
-		p.beginScrolling(scroll);
-		gl.glDrawArrays(GL_POLYGON, p.pos, p.numverts);
-		p.endScrolling();
-	}
-
-	/**
-	 * R_DrawTriangleOutlines
-	*/
-	void R_DrawTriangleOutlines()
-	{
-        if (gl_showtris.value == 0)
-            return;
-
-        gl.glDisable(GL_TEXTURE_2D);
-        gl.glDisable(GL_DEPTH_TEST);
-        gl.glColor4f(1, 1, 1, 1);
-
-        msurface_t surf;
-        glpoly_t p;
-        int j;	
-        for (int i = 0; i < MAX_LIGHTMAPS; i++) {
-             for (surf = gl_lms.lightmap_surfaces[i]; surf != null; surf = surf.lightmapchain) {
-                for (p = surf.polys; p != null; p = p.chain) {
-                    for (j = 2; j < p.numverts; j++) {
-                        gl.glBegin(GL_LINE_STRIP);
-						gl.glVertex3f(p.x(0), p.y(0), p.z(0));
-						gl.glVertex3f(p.x(j-1), p.y(j-1), p.z(j-1));
-						gl.glVertex3f(p.x(j), p.y(j), p.z(j));
-						gl.glVertex3f(p.x(0), p.y(0), p.z(0));
-                        gl.glEnd();
-                    }
-                }
-            }
-        }
-
-        gl.glEnable(GL_DEPTH_TEST);
-        gl.glEnable(GL_TEXTURE_2D);
-	}
-
-	private final IntBuffer temp2 = Lib.newIntBuffer(34 * 34, ByteOrder.LITTLE_ENDIAN);
-
-	/**
-	 * R_RenderBrushPoly
-	 */
-	void R_RenderBrushPoly(msurface_t fa)
-	{
-		c_brush_polys++;
-
-		image_t image = R_TextureAnimation(fa.texinfo);
-
-		if ((fa.flags & Defines.SURF_DRAWTURB) != 0)
-		{	
-			GL_Bind( image.texnum );
-
-			// warp texture, no lightmaps
-			GL_TexEnv( GL_MODULATE );
-			gl.glColor4f( gl_state.inverse_intensity, 
-						gl_state.inverse_intensity,
-						gl_state.inverse_intensity,
-						1.0F );
-			EmitWaterPolys (fa);
-			GL_TexEnv( GL_REPLACE );
-
-			return;
-		}
-		else
-		{
-			GL_Bind( image.texnum );
-			GL_TexEnv( GL_REPLACE );
-		}
-
-		//	  ======
-		//	  PGM
-		if((fa.texinfo.flags & Defines.SURF_FLOWING) != 0)
-			DrawGLFlowingPoly(fa.polys);
-		else
-			DrawGLPoly (fa.polys);
-		//	  PGM
-		//	  ======
-
-		// ersetzt goto
-		boolean gotoDynamic = false;
-		/*
-		** check for lightmap modification
-		*/
-		int maps;
-		for ( maps = 0; maps < Defines.MAXLIGHTMAPS && fa.styles[maps] != (byte)255; maps++ )
-		{
-			if ( r_newrefdef.lightstyles[fa.styles[maps] & 0xFF].white != fa.cached_light[maps] ) {
-				gotoDynamic = true;
-				break;
+			public virtual void ClearLightmapSurfaces( )
+			{
+				for ( var i = 0; i < MAX_LIGHTMAPS; i++ )
+					lightmap_surfaces[i] = new msurface_t();
 			}
 		}
-		
-		// this is a hack from cwei
-		if (maps == 4) maps--;
 
-		// dynamic this frame or dynamic previously
-		boolean is_dynamic = false;
-		if ( gotoDynamic || ( fa.dlightframe == r_framecount ) )
+		gllightmapstate_t gl_lms = new gllightmapstate_t();
+		public abstract Byte[] Mod_ClusterPVS( Int32 cluster, model_t model );
+		public abstract void R_DrawSkyBox( );
+		public abstract void R_AddSkySurface( msurface_t surface );
+		public abstract void R_ClearSkyBox( );
+		public abstract void EmitWaterPolys( msurface_t fa );
+		public abstract void R_MarkLights( dlight_t light, Int32 bit, mnode_t node );
+		public abstract void R_SetCacheState( msurface_t surf );
+		public abstract void R_BuildLightMap( msurface_t surf, Int32Buffer dest, Int32 stride );
+		public virtual image_t R_TextureAnimation( mtexinfo_t tex )
 		{
-			//	label dynamic:
-			if ( gl_dynamic.value != 0 )
+			if ( tex.next == null )
+				return tex.image;
+			var c = currententity.frame % tex.numframes;
+			while ( c != 0 )
 			{
-				if (( fa.texinfo.flags & (Defines.SURF_SKY | Defines.SURF_TRANS33 | Defines.SURF_TRANS66 | Defines.SURF_WARP ) ) == 0)
+				tex = tex.next;
+				c--;
+			}
+
+			return tex.image;
+		}
+
+		public virtual void DrawGLPoly( glpoly_t p )
+		{
+			GL.DrawArrays( PrimitiveType.Polygon, p.pos, p.numverts );
+		}
+
+		public virtual void DrawGLFlowingPoly( glpoly_t p )
+		{
+			var scroll = -64 * ( ( r_newrefdef.time / 40F ) - ( Int32 ) ( r_newrefdef.time / 40F ) );
+			if ( scroll == 0F )
+				scroll = -64F;
+			p.BeginScrolling( scroll );
+			GL.DrawArrays( PrimitiveType.Polygon, p.pos, p.numverts );
+			p.EndScrolling();
+		}
+
+		public virtual void R_DrawTriangleOutlines( )
+		{
+			if ( gl_showtris.value == 0 )
+				return;
+			GL.Disable( EnableCap.Texture2D );
+			GL.Disable( EnableCap.DepthTest );
+			GL.Color4( 1, 1, 1, 1 );
+			msurface_t surf;
+			glpoly_t p;
+			Int32 j;
+			for ( var i = 0; i < MAX_LIGHTMAPS; i++ )
+			{
+				for ( surf = gl_lms.lightmap_surfaces[i]; surf != null; surf = surf.lightmapchain )
 				{
-					is_dynamic = true;
+					for ( p = surf.polys; p != null; p = p.chain )
+					{
+						for ( j = 2; j < p.numverts; j++ )
+						{
+							GL.Begin( PrimitiveType.LineStrip );
+							GL.Vertex3( p.X( 0 ), p.Y( 0 ), p.Z( 0 ) );
+							GL.Vertex3( p.X( j - 1 ), p.Y( j - 1 ), p.Z( j - 1 ) );
+							GL.Vertex3( p.X( j ), p.Y( j ), p.Z( j ) );
+							GL.Vertex3( p.X( 0 ), p.Y( 0 ), p.Z( 0 ) );
+							GL.End();
+						}
+					}
 				}
 			}
+
+			GL.Enable( EnableCap.DepthTest );
+			GL.Enable( EnableCap.Texture2D );
 		}
 
-		if ( is_dynamic )
+		private readonly Int32Buffer temp2 = Lib.NewInt32Buffer( 34 * 34, ByteOrder.LittleEndian );
+		public virtual void R_RenderBrushPoly( msurface_t fa )
 		{
-			if ( ( (fa.styles[maps] & 0xFF) >= 32 || fa.styles[maps] == 0 ) && ( fa.dlightframe != r_framecount ) )
+			c_brush_polys++;
+			image_t image = R_TextureAnimation( fa.texinfo );
+			if ( ( fa.flags & Defines.SURF_DRAWTURB ) != 0 )
 			{
-				// ist ersetzt durch temp2:	unsigned	temp[34*34];
-				int smax, tmax;
+				GL_Bind( image.texnum );
+				GL_TexEnv( ( Int32 ) All.Modulate );
+				GL.Color4( gl_state.inverse_intensity, gl_state.inverse_intensity, gl_state.inverse_intensity, 1F );
+				EmitWaterPolys( fa );
+				GL_TexEnv( ( Int32 ) All.Replace );
+				return;
+			}
+			else
+			{
+				GL_Bind( image.texnum );
+				GL_TexEnv( ( Int32 ) All.Replace );
+			}
 
-				smax = (fa.extents[0]>>4)+1;
-				tmax = (fa.extents[1]>>4)+1;
+			if ( ( fa.texinfo.flags & Defines.SURF_FLOWING ) != 0 )
+				DrawGLFlowingPoly( fa.polys );
+			else
+				DrawGLPoly( fa.polys );
+			var gotoDynamic = false;
+			Int32 maps;
+			for ( maps = 0; maps < Defines.MAXLIGHTMAPS && fa.styles[maps] != ( Byte ) 255; maps++ )
+			{
+				if ( r_newrefdef.lightstyles[fa.styles[maps] & 0xFF].white != fa.cached_light[maps] )
+				{
+					gotoDynamic = true;
+					break;
+				}
+			}
 
-				R_BuildLightMap( fa, temp2, smax);
-				R_SetCacheState( fa );
+			if ( maps == 4 )
+				maps--;
+			var is_dynamic = false;
+			if ( gotoDynamic || ( fa.dlightframe == r_framecount ) )
+			{
+				if ( gl_dynamic.value != 0 )
+				{
+					if ( ( fa.texinfo.flags & ( Defines.SURF_SKY | Defines.SURF_TRANS33 | Defines.SURF_TRANS66 | Defines.SURF_WARP ) ) == 0 )
+					{
+						is_dynamic = true;
+					}
+				}
+			}
 
-				GL_Bind( gl_state.lightmap_textures + fa.lightmaptexturenum );
-
-				gl.glTexSubImage2D( GL_TEXTURE_2D, 0,
-								  fa.light_s, fa.light_t, 
-								  smax, tmax, 
-								  GL_LIGHTMAP_FORMAT, 
-								  GL_UNSIGNED_BYTE, temp2 );
-
+			if ( is_dynamic )
+			{
+				if ( ( ( fa.styles[maps] & 0xFF ) >= 32 || fa.styles[maps] == 0 ) && ( fa.dlightframe != r_framecount ) )
+				{
+					Int32 smax, tmax;
+					smax = ( fa.extents[0] >> 4 ) + 1;
+					tmax = ( fa.extents[1] >> 4 ) + 1;
+					R_BuildLightMap( fa, temp2, smax );
+					R_SetCacheState( fa );
+					GL_Bind( gl_state.lightmap_textures + fa.lightmaptexturenum );
+					new Pinnable( temp2, ( ptr ) =>
+					{
+						GL.TexSubImage2D( TextureTarget.Texture2D, 0, fa.light_s, fa.light_t, smax, tmax, GL_LIGHTMAP_FORMAT, PixelType.UnsignedByte, ptr );
+					} );
+					fa.lightmapchain = gl_lms.lightmap_surfaces[fa.lightmaptexturenum];
+					gl_lms.lightmap_surfaces[fa.lightmaptexturenum] = fa;
+				}
+				else
+				{
+					fa.lightmapchain = gl_lms.lightmap_surfaces[0];
+					gl_lms.lightmap_surfaces[0] = fa;
+				}
+			}
+			else
+			{
 				fa.lightmapchain = gl_lms.lightmap_surfaces[fa.lightmaptexturenum];
 				gl_lms.lightmap_surfaces[fa.lightmaptexturenum] = fa;
 			}
-			else
-			{
-				fa.lightmapchain = gl_lms.lightmap_surfaces[0];
-				gl_lms.lightmap_surfaces[0] = fa;
-			}
-		}
-		else
-		{
-			fa.lightmapchain = gl_lms.lightmap_surfaces[fa.lightmaptexturenum];
-			gl_lms.lightmap_surfaces[fa.lightmaptexturenum] = fa;
-		}
-	}
-
-
-	/**
-	 * R_DrawAlphaSurfaces
-	 * Draw water surfaces and windows.
-	 * The BSP tree is waled front to back, so unwinding the chain
-	 * of alpha_surfaces will draw back to front, giving proper ordering.
-	 */
-	void R_DrawAlphaSurfaces()
-	{
-		r_world_matrix.clear();
-		//
-		// go back to the world matrix
-		//
-		gl.glLoadMatrix(r_world_matrix);
-
-		gl.glEnable (GL_BLEND);
-		GL_TexEnv(GL_MODULATE );
-		
-
-		// the textures are prescaled up for a better lighting range,
-		// so scale it back down
-		float intens = gl_state.inverse_intensity;
-
-		gl.glInterleavedArrays(GL_T2F_V3F, glpoly_t.BYTE_STRIDE, globalPolygonInterleavedBuf);
-
-		for (msurface_t s = r_alpha_surfaces ; s != null ; s=s.texturechain)
-		{
-			GL_Bind(s.texinfo.image.texnum);
-			c_brush_polys++;
-			if ((s.texinfo.flags & Defines.SURF_TRANS33) != 0)
-				gl.glColor4f (intens, intens, intens, 0.33f);
-			else if ((s.texinfo.flags & Defines.SURF_TRANS66) != 0)
-				gl.glColor4f (intens, intens, intens, 0.66f);
-			else
-				gl.glColor4f (intens,intens,intens,1);
-			if ((s.flags & Defines.SURF_DRAWTURB) != 0)
-				EmitWaterPolys(s);
-			else if((s.texinfo.flags & Defines.SURF_FLOWING) != 0)			// PGM	9/16/98
-				DrawGLFlowingPoly(s.polys);							// PGM
-			else
-				DrawGLPoly(s.polys);
 		}
 
-		GL_TexEnv( GL_REPLACE );
-		gl.glColor4f (1,1,1,1);
-		gl.glDisable (GL_BLEND);
-
-		r_alpha_surfaces = null;
-	}
-
-	/**
-	 * DrawTextureChains
-	 */
-	void DrawTextureChains()
-	{
-		c_visible_textures = 0;
-
-		msurface_t	s;
-		image_t image;
-		int i;
-		for (i = 0; i < numgltextures ; i++)
+		public override void R_DrawAlphaSurfaces( )
 		{
-			image = gltextures[i];
-
-			if (image.registration_sequence == 0)
-				continue;
-			if (image.texturechain == null)
-				continue;
-			c_visible_textures++;
-
-			for ( s = image.texturechain; s != null ; s=s.texturechain)
+			r_world_matrix.Clear();
+			GL.LoadMatrix( r_world_matrix.Array );
+			GL.Enable( EnableCap.Blend );
+			GL_TexEnv( ( Int32 ) All.Modulate );
+			var intens = gl_state.inverse_intensity;
+			GL.InterleavedArrays( InterleavedArrayFormat.T2fV3f, glpoly_t.BYTE_STRIDE, globalPolygonInterleavedBuf.Array );
+			for ( msurface_t s = r_alpha_surfaces; s != null; s = s.texturechain )
 			{
-				if ( ( s.flags & Defines.SURF_DRAWTURB) == 0 )
-					R_RenderBrushPoly(s);
-			}
-		}
-
-		GL_EnableMultitexture( false );
-		for (i = 0; i < numgltextures ; i++)
-		{
-			image = gltextures[i];
-
-			if (image.registration_sequence == 0)
-				continue;
-			s = image.texturechain;
-			if (s == null)
-				continue;
-
-			for ( ; s != null ; s=s.texturechain)
-			{
-				if ( (s.flags & Defines.SURF_DRAWTURB) != 0 )
-					R_RenderBrushPoly(s);
-			}
-
-			image.texturechain = null;
-		}
-
-		GL_TexEnv( GL_REPLACE );
-	}
-
-	// direct buffer
-	private final IntBuffer temp = Lib.newIntBuffer(128 * 128, ByteOrder.LITTLE_ENDIAN);
-	
-	/**
-	 * GL_RenderLightmappedPoly
-	 * @param surf
-	 */
-	void GL_RenderLightmappedPoly( msurface_t surf )
-	{
-
-		// ersetzt goto
-		boolean gotoDynamic = false;
-		int map;
-		for ( map = 0; map < Defines.MAXLIGHTMAPS && (surf.styles[map] != (byte)255); map++ )
-		{
-			if ( r_newrefdef.lightstyles[surf.styles[map] & 0xFF].white != surf.cached_light[map] ) {
-				gotoDynamic = true;
-				break;
-			}
-		}
-
-		// this is a hack from cwei
-		if (map == 4) map--;
-
-		// dynamic this frame or dynamic previously
-		boolean is_dynamic = false;
-		if ( gotoDynamic || ( surf.dlightframe == r_framecount ) )
-		{
-			//	label dynamic:
-			if ( gl_dynamic.value != 0 )
-			{
-				if ( (surf.texinfo.flags & (Defines.SURF_SKY | Defines.SURF_TRANS33 | Defines.SURF_TRANS66 | Defines.SURF_WARP )) == 0 )
-				{
-					is_dynamic = true;
-				}
-			}
-		}
-
-		glpoly_t p;
-		image_t image = R_TextureAnimation( surf.texinfo );
-		int lmtex = surf.lightmaptexturenum;
-
-		if ( is_dynamic )
-		{
-			// ist raus gezogen worden int[] temp = new int[128*128];
-			int smax, tmax;
-
-			if ( ( (surf.styles[map] & 0xFF) >= 32 || surf.styles[map] == 0 ) && ( surf.dlightframe != r_framecount ) )
-			{
-				smax = (surf.extents[0]>>4)+1;
-				tmax = (surf.extents[1]>>4)+1;
-
-				R_BuildLightMap( surf, temp, smax);
-				R_SetCacheState( surf );
-
-				GL_MBind(TEXTURE1, gl_state.lightmap_textures + surf.lightmaptexturenum );
-
-				lmtex = surf.lightmaptexturenum;
-
-				gl.glTexSubImage2D( GL_TEXTURE_2D, 0,
-								  surf.light_s, surf.light_t, 
-								  smax, tmax, 
-								  GL_LIGHTMAP_FORMAT, 
-								  GL_UNSIGNED_BYTE, temp );
-
-			}
-			else
-			{
-				smax = (surf.extents[0]>>4)+1;
-				tmax = (surf.extents[1]>>4)+1;
-
-				R_BuildLightMap( surf, temp, smax);
-
-				GL_MBind(TEXTURE1, gl_state.lightmap_textures + 0 );
-
-				lmtex = 0;
-
-				gl.glTexSubImage2D( GL_TEXTURE_2D, 0,
-								  surf.light_s, surf.light_t, 
-								  smax, tmax, 
-								  GL_LIGHTMAP_FORMAT, 
-								  GL_UNSIGNED_BYTE, temp );
-
-			}
-
-			c_brush_polys++;
-
-			GL_MBind(TEXTURE0, image.texnum );
-			GL_MBind(TEXTURE1, gl_state.lightmap_textures + lmtex );
-
-			// ==========
-			//	  PGM
-			if ((surf.texinfo.flags & Defines.SURF_FLOWING) != 0)
-			{
-				float scroll;
-		
-				scroll = -64 * ( (r_newrefdef.time / 40.0f) - (int)(r_newrefdef.time / 40.0f) );
-				if(scroll == 0.0f)
-					scroll = -64.0f;
-
-				for ( p = surf.polys; p != null; p = p.chain )
-				{
-				    p.beginScrolling(scroll);
-					gl.glDrawArrays(GL_POLYGON, p.pos, p.numverts);
-				    p.endScrolling();
-				}
-			}
-			else
-			{
-				for ( p = surf.polys; p != null; p = p.chain )
-				{
-					gl.glDrawArrays(GL_POLYGON, p.pos, p.numverts);
-				}
-			}
-			// PGM
-			// ==========
-		}
-		else
-		{
-			c_brush_polys++;
-
-			GL_MBind(TEXTURE0, image.texnum );
-			GL_MBind(TEXTURE1, gl_state.lightmap_textures + lmtex);
-			
-			// ==========
-			//	  PGM
-			if ((surf.texinfo.flags & Defines.SURF_FLOWING) != 0)
-			{
-				float scroll;
-		
-				scroll = -64 * ( (r_newrefdef.time / 40.0f) - (int)(r_newrefdef.time / 40.0f) );
-				if(scroll == 0.0)
-					scroll = -64.0f;
-
-				for ( p = surf.polys; p != null; p = p.chain )
-				{
-				    p.beginScrolling(scroll);
-					gl.glDrawArrays(GL_POLYGON, p.pos, p.numverts);
-				    p.endScrolling();
-				}
-			}
-			else
-			{
-			// PGM
-			//  ==========
-				for ( p = surf.polys; p != null; p = p.chain )
-				{
-					gl.glDrawArrays(GL_POLYGON, p.pos, p.numverts);
-				}
-				
-			// ==========
-			// PGM
-			}
-			// PGM
-			// ==========
-		}
-	}
-
-	/**
-	 * R_DrawInlineBModel
-	 */
-	void R_DrawInlineBModel()
-	{
-		// calculate dynamic lighting for bmodel
-		if ( gl_flashblend.value == 0 )
-		{
-			dlight_t	lt;
-			for (int k=0 ; k<r_newrefdef.num_dlights ; k++)
-			{
-				lt = r_newrefdef.dlights[k];
-				R_MarkLights(lt, 1<<k, currentmodel.nodes[currentmodel.firstnode]);
-			}
-		}
-
-		// psurf = &currentmodel->surfaces[currentmodel->firstmodelsurface];
-		int psurfp = currentmodel.firstmodelsurface;
-		msurface_t[] surfaces = currentmodel.surfaces;
-		//psurf = surfaces[psurfp];
-
-		if ( (currententity.flags & Defines.RF_TRANSLUCENT) != 0 )
-		{
-			gl.glEnable (GL_BLEND);
-			gl.glColor4f (1,1,1,0.25f);
-			GL_TexEnv( GL_MODULATE );
-		}
-
-		//
-		// draw texture
-		//
-		msurface_t psurf;
-		cplane_t pplane;
-		float dot;
-		for (int i=0 ; i<currentmodel.nummodelsurfaces ; i++)
-		{
-			psurf = surfaces[psurfp++];
-			// find which side of the node we are on
-			pplane = psurf.plane;
-
-			dot = Math3D.DotProduct(modelorg, pplane.normal) - pplane.dist;
-
-			// draw the polygon
-			if (((psurf.flags & Defines.SURF_PLANEBACK) != 0 && (dot < -BACKFACE_EPSILON)) ||
-				((psurf.flags & Defines.SURF_PLANEBACK) == 0 && (dot > BACKFACE_EPSILON)))
-			{
-				if ((psurf.texinfo.flags & (Defines.SURF_TRANS33 | Defines.SURF_TRANS66)) != 0 )
-				{	// add to the translucent chain
-					psurf.texturechain = r_alpha_surfaces;
-					r_alpha_surfaces = psurf;
-				}
-				else if ( (psurf.flags & Defines.SURF_DRAWTURB) == 0 )
-				{
-					GL_RenderLightmappedPoly( psurf );
-				}
+				GL_Bind( s.texinfo.image.texnum );
+				c_brush_polys++;
+				if ( ( s.texinfo.flags & Defines.SURF_TRANS33 ) != 0 )
+					GL.Color4( intens, intens, intens, 0.33F );
+				else if ( ( s.texinfo.flags & Defines.SURF_TRANS66 ) != 0 )
+					GL.Color4( intens, intens, intens, 0.66F );
 				else
-				{
-					GL_EnableMultitexture( false );
-					R_RenderBrushPoly( psurf );
-					GL_EnableMultitexture( true );
-				}
-			}
-		}
-		
-		if ( (currententity.flags & Defines.RF_TRANSLUCENT) != 0 ) {
-			gl.glDisable (GL_BLEND);
-			gl.glColor4f (1,1,1,1);
-			GL_TexEnv( GL_REPLACE );
-		}
-	}
-
-	// stack variable
-	private final float[] mins = {0, 0, 0};
-	private final float[] maxs = {0, 0, 0};
-	private final float[] org = {0, 0, 0};
-	private final float[] forward = {0, 0, 0};
-	private final float[] right = {0, 0, 0};
-	private final float[] up = {0, 0, 0};
-	/**
-	 * R_DrawBrushModel
-	 */
-	void R_DrawBrushModel(entity_t e)
-	{
-		if (currentmodel.nummodelsurfaces == 0)
-			return;
-
-		currententity = e;
-		gl_state.currenttextures[0] = gl_state.currenttextures[1] = -1;
-
-		boolean rotated;
-		if (e.angles[0] != 0 || e.angles[1] != 0 || e.angles[2] != 0)
-		{
-			rotated = true;
-			for (int i=0 ; i<3 ; i++)
-			{
-				mins[i] = e.origin[i] - currentmodel.radius;
-				maxs[i] = e.origin[i] + currentmodel.radius;
-			}
-		}
-		else
-		{
-			rotated = false;
-			Math3D.VectorAdd(e.origin, currentmodel.mins, mins);
-			Math3D.VectorAdd(e.origin, currentmodel.maxs, maxs);
-		}
-
-		if (R_CullBox(mins, maxs)) return;
-
-		gl.glColor3f (1,1,1);
-		
-		// memset (gl_lms.lightmap_surfaces, 0, sizeof(gl_lms.lightmap_surfaces));
-		
-		// TODO wird beim multitexturing nicht gebraucht
-		//gl_lms.clearLightmapSurfaces();
-		
-		Math3D.VectorSubtract (r_newrefdef.vieworg, e.origin, modelorg);
-		if (rotated)
-		{
-			Math3D.VectorCopy (modelorg, org);
-			Math3D.AngleVectors (e.angles, forward, right, up);
-			modelorg[0] = Math3D.DotProduct (org, forward);
-			modelorg[1] = -Math3D.DotProduct (org, right);
-			modelorg[2] = Math3D.DotProduct (org, up);
-		}
-
-		gl.glPushMatrix();
-		
-		e.angles[0] = -e.angles[0];	// stupid quake bug
-		e.angles[2] = -e.angles[2];	// stupid quake bug
-		R_RotateForEntity(e);
-		e.angles[0] = -e.angles[0];	// stupid quake bug
-		e.angles[2] = -e.angles[2];	// stupid quake bug
-
-		GL_EnableMultitexture( true );
-		GL_SelectTexture(TEXTURE0);
-		GL_TexEnv( GL_REPLACE );
-		gl.glInterleavedArrays(GL_T2F_V3F, glpoly_t.BYTE_STRIDE, globalPolygonInterleavedBuf);
-		GL_SelectTexture(TEXTURE1);
-		GL_TexEnv( GL_MODULATE );
-		gl.glTexCoordPointer(2, glpoly_t.BYTE_STRIDE, globalPolygonTexCoord1Buf);
-		gl.glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
-		R_DrawInlineBModel();
-
-		gl.glClientActiveTextureARB(TEXTURE1);
-		gl.glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-
-		GL_EnableMultitexture( false );
-
-		gl.glPopMatrix();
-	}
-
-	/*
-	=============================================================
-
-		WORLD MODEL
-
-	=============================================================
-	*/
-
-	/**
-	 * R_RecursiveWorldNode
-	 */
-	void R_RecursiveWorldNode (mnode_t node)
-	{
-		if (node.contents == Defines.CONTENTS_SOLID)
-			return;		// solid
-		
-		if (node.visframe != r_visframecount)
-			return;
-			
-		if (R_CullBox(node.mins, node.maxs))
-			return;
-	
-		int c;
-		msurface_t mark;
-		// if a leaf node, draw stuff
-		if (node.contents != -1)
-		{
-			mleaf_t pleaf = (mleaf_t)node;
-
-			// check for door connected areas
-			if (r_newrefdef.areabits != null)
-			{
-				if ( ((r_newrefdef.areabits[pleaf.area >> 3] & 0xFF) & (1 << (pleaf.area & 7)) ) == 0 )
-					return;		// not visible
-			}
-
-			int markp = 0;
-
-			mark = pleaf.getMarkSurface(markp); // first marked surface
-			c = pleaf.nummarksurfaces;
-
-			if (c != 0)
-			{
-				do
-				{
-					mark.visframe = r_framecount;
-					mark = pleaf.getMarkSurface(++markp); // next surface
-				} while (--c != 0);
-			}
-
-			return;
-		}
-
-		// node is just a decision point, so go down the apropriate sides
-
-		// find which side of the node we are on
-		cplane_t plane = node.plane;
-		float dot;
-		switch (plane.type)
-		{
-		case Defines.PLANE_X:
-			dot = modelorg[0] - plane.dist;
-			break;
-		case Defines.PLANE_Y:
-			dot = modelorg[1] - plane.dist;
-			break;
-		case Defines.PLANE_Z:
-			dot = modelorg[2] - plane.dist;
-			break;
-		default:
-			dot = Math3D.DotProduct(modelorg, plane.normal) - plane.dist;
-			break;
-		}
-
-		int side, sidebit;
-		if (dot >= 0.0f)
-		{
-			side = 0;
-			sidebit = 0;
-		}
-		else
-		{
-			side = 1;
-			sidebit = Defines.SURF_PLANEBACK;
-		}
-
-		// recurse down the children, front side first
-		R_RecursiveWorldNode(node.children[side]);
-
-		// draw stuff
-		msurface_t surf;
-		image_t image;
-		//for ( c = node.numsurfaces, surf = r_worldmodel.surfaces[node.firstsurface]; c != 0 ; c--, surf++)
-		for ( c = 0; c < node.numsurfaces; c++)
-		{
-			surf = r_worldmodel.surfaces[node.firstsurface + c];
-			if (surf.visframe != r_framecount)
-				continue;
-
-			if ( (surf.flags & Defines.SURF_PLANEBACK) != sidebit )
-				continue;		// wrong side
-
-			if ((surf.texinfo.flags & Defines.SURF_SKY) != 0)
-			{	// just adds to visible sky bounds
-				R_AddSkySurface(surf);
-			}
-			else if ((surf.texinfo.flags & (Defines.SURF_TRANS33 | Defines.SURF_TRANS66)) != 0)
-			{	// add to the translucent chain
-				surf.texturechain = r_alpha_surfaces;
-				r_alpha_surfaces = surf;
-			}
-			else
-			{
-				if (  ( surf.flags & Defines.SURF_DRAWTURB) == 0 )
-				{
-					GL_RenderLightmappedPoly( surf );
-				}
+					GL.Color4( intens, intens, intens, 1 );
+				if ( ( s.flags & Defines.SURF_DRAWTURB ) != 0 )
+					EmitWaterPolys( s );
+				else if ( ( s.texinfo.flags & Defines.SURF_FLOWING ) != 0 )
+					DrawGLFlowingPoly( s.polys );
 				else
+					DrawGLPoly( s.polys );
+			}
+
+			GL_TexEnv( ( Int32 ) All.Replace );
+			GL.Color4( 1, 1, 1, 1 );
+			GL.Disable( EnableCap.Blend );
+			r_alpha_surfaces = null;
+		}
+
+		public virtual void DrawTextureChains( )
+		{
+			c_visible_textures = 0;
+			msurface_t s;
+			image_t image;
+			Int32 i;
+			for ( i = 0; i < numgltextures; i++ )
+			{
+				image = gltextures[i];
+				if ( image.registration_sequence == 0 )
+					continue;
+				if ( image.texturechain == null )
+					continue;
+				c_visible_textures++;
+				for ( s = image.texturechain; s != null; s = s.texturechain )
 				{
-					// the polygon is visible, so add it to the texture
-					// sorted chain
-					// FIXME: this is a hack for animation
-					image = R_TextureAnimation(surf.texinfo);
-					surf.texturechain = image.texturechain;
-					image.texturechain = surf;
+					if ( ( s.flags & Defines.SURF_DRAWTURB ) == 0 )
+						R_RenderBrushPoly( s );
 				}
 			}
-		}
-		// recurse down the back side
-		R_RecursiveWorldNode(node.children[1 - side]);
-	}
 
-	private final entity_t worldEntity = new entity_t();
-	
-	/**
-	 * R_DrawWorld
-	 */
-	void R_DrawWorld()
-	{
-		if (r_drawworld.value == 0)
-			return;
-
-		if ( (r_newrefdef.rdflags & Defines.RDF_NOWORLDMODEL) != 0 )
-			return;
-
-		currentmodel = r_worldmodel;
-
-		Math3D.VectorCopy(r_newrefdef.vieworg, modelorg);
-
-		entity_t ent = worldEntity;
-		// auto cycle the world frame for texture animation
-		ent.clear();
-		ent.frame = (int)(r_newrefdef.time*2);
-		currententity = ent;
-
-		gl_state.currenttextures[0] = gl_state.currenttextures[1] = -1;
-
-		gl.glColor3f (1,1,1);
-		// memset (gl_lms.lightmap_surfaces, 0, sizeof(gl_lms.lightmap_surfaces));
-		// TODO wird bei multitexture nicht gebraucht
-		//gl_lms.clearLightmapSurfaces();
-		
-		R_ClearSkyBox();
-
-		GL_EnableMultitexture( true );
-
-		GL_SelectTexture(TEXTURE0);
-		GL_TexEnv( GL_REPLACE );
-		gl.glInterleavedArrays(GL_T2F_V3F, glpoly_t.BYTE_STRIDE, globalPolygonInterleavedBuf);
-		GL_SelectTexture(TEXTURE1);
-		gl.glTexCoordPointer(2, glpoly_t.BYTE_STRIDE, globalPolygonTexCoord1Buf);
-		gl.glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
-		if ( gl_lightmap.value != 0)
-			GL_TexEnv( GL_REPLACE );
-		else 
-			GL_TexEnv( GL_MODULATE );
-				
-		R_RecursiveWorldNode(r_worldmodel.nodes[0]); // root node
-				
-		gl.glClientActiveTextureARB(TEXTURE1);
-		gl.glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-
-		GL_EnableMultitexture( false );
-
-		DrawTextureChains();
-		R_DrawSkyBox();
-		R_DrawTriangleOutlines();
-	}
-
-	final byte[] fatvis = new byte[Defines.MAX_MAP_LEAFS / 8];
-
-	/**
-	 * R_MarkLeaves
-	 * Mark the leaves and nodes that are in the PVS for the current
-	 * cluster
-	 */
-	void R_MarkLeaves()
-	{
-		if (r_oldviewcluster == r_viewcluster && r_oldviewcluster2 == r_viewcluster2 && r_novis.value == 0 && r_viewcluster != -1)
-			return;
-
-		// development aid to let you run around and see exactly where
-		// the pvs ends
-		if (gl_lockpvs.value != 0)
-			return;
-
-		r_visframecount++;
-		r_oldviewcluster = r_viewcluster;
-		r_oldviewcluster2 = r_viewcluster2;
-
-		int i;
-		if (r_novis.value != 0 || r_viewcluster == -1 || r_worldmodel.vis == null)
-		{
-			// mark everything
-			for (i=0 ; i<r_worldmodel.numleafs ; i++)
-				r_worldmodel.leafs[i].visframe = r_visframecount;
-			for (i=0 ; i<r_worldmodel.numnodes ; i++)
-				r_worldmodel.nodes[i].visframe = r_visframecount;
-			return;
-		}
-
-		byte[] vis = Mod_ClusterPVS(r_viewcluster, r_worldmodel);
-		int c;
-		// may have to combine two clusters because of solid water boundaries
-		if (r_viewcluster2 != r_viewcluster)
-		{
-			// memcpy (fatvis, vis, (r_worldmodel.numleafs+7)/8);
-			System.arraycopy(vis, 0, fatvis, 0, (r_worldmodel.numleafs+7) >> 3);
-			vis = Mod_ClusterPVS(r_viewcluster2, r_worldmodel);
-			c = (r_worldmodel.numleafs + 31) >> 5;
-			c <<= 2;
-			for (int k=0 ; k<c ; k+=4) {
-				fatvis[k] |= vis[k];
-				fatvis[k + 1] |= vis[k + 1];
-				fatvis[k + 2] |= vis[k + 2];
-				fatvis[k + 3] |= vis[k + 3];
-			}
-
-			vis = fatvis;
-		}
-
-		mnode_t node;
-		mleaf_t leaf;
-		int cluster;
-		for ( i=0; i < r_worldmodel.numleafs; i++)
-		{
-			leaf = r_worldmodel.leafs[i];
-			cluster = leaf.cluster;
-			if (cluster == -1)
-				continue;
-			if (((vis[cluster>>3] & 0xFF) & (1 << (cluster & 7))) != 0)
+			GL_EnableMultitexture( false );
+			for ( i = 0; i < numgltextures; i++ )
 			{
-				node = (mnode_t)leaf;
-				do
+				image = gltextures[i];
+				if ( image.registration_sequence == 0 )
+					continue;
+				s = image.texturechain;
+				if ( s == null )
+					continue;
+				for ( ; s != null; s = s.texturechain )
 				{
-					if (node.visframe == r_visframecount)
-						break;
-					node.visframe = r_visframecount;
-					node = node.parent;
-				} while (node != null);
-			}
-		}
-	}
+					if ( ( s.flags & Defines.SURF_DRAWTURB ) != 0 )
+						R_RenderBrushPoly( s );
+				}
 
-	/*
-	=============================================================================
-
-	  LIGHTMAP ALLOCATION
-
-	=============================================================================
-	*/
-
-	/**
-	 * LM_InitBlock
-	 */
-	void LM_InitBlock()
-	{
-		Arrays.fill(gl_lms.allocated, 0);
-	}
-
-	/**
-	 * LM_UploadBlock
-	 * @param dynamic
-	 */
-	void LM_UploadBlock( boolean dynamic )
-	{
-		int texture = ( dynamic ) ? 0 : gl_lms.current_lightmap_texture;
-
-		GL_Bind( gl_state.lightmap_textures + texture );
-		gl.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		gl.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-		gl_lms.lightmap_buffer.rewind();
-		if ( dynamic )
-		{
-			int height = 0;
-			for (int i = 0; i < BLOCK_WIDTH; i++ )
-			{
-				if ( gl_lms.allocated[i] > height )
-					height = gl_lms.allocated[i];
+				image.texturechain = null;
 			}
 
-			gl.glTexSubImage2D( GL_TEXTURE_2D, 
-							  0,
-							  0, 0,
-							  BLOCK_WIDTH, height,
-							  GL_LIGHTMAP_FORMAT,
-							  GL_UNSIGNED_BYTE,
-							  gl_lms.lightmap_buffer );
+			GL_TexEnv( ( Int32 ) All.Replace );
 		}
-		else
-		{
-			gl.glTexImage2D( GL_TEXTURE_2D, 
-						   0, 
-						   gl_lms.internal_format,
-						   BLOCK_WIDTH, BLOCK_HEIGHT, 
-						   0, 
-						   GL_LIGHTMAP_FORMAT, 
-						   GL_UNSIGNED_BYTE, 
-						   gl_lms.lightmap_buffer );
-			if ( ++gl_lms.current_lightmap_texture == MAX_LIGHTMAPS )
-				Com.Error( Defines.ERR_DROP, "LM_UploadBlock() - MAX_LIGHTMAPS exceeded\n" );
-				
-			//debugLightmap(gl_lms.lightmap_buffer, 128, 128, 4);
-		}
-	}
 
-	/**
-	 * LM_AllocBlock
-	 * @param w
-	 * @param h
-	 * @param pos
-	 * @return a texture number and the position inside it
-	 */
-	boolean LM_AllocBlock (int w, int h, pos_t pos)
-	{
-		int best = BLOCK_HEIGHT;
-		int x = pos.x; 
-		int best2;
-		int i, j;
-		for (i=0 ; i<BLOCK_WIDTH-w ; i++)
+		private readonly Int32Buffer temp = Lib.NewInt32Buffer( 128 * 128, ByteOrder.LittleEndian );
+		public virtual void GL_RenderLightmappedPoly( msurface_t surf )
 		{
-			best2 = 0;
-
-			for (j=0 ; j<w ; j++)
+			var gotoDynamic = false;
+			Int32 map;
+			for ( map = 0; map < Defines.MAXLIGHTMAPS && ( surf.styles[map] != ( Byte ) 255 ); map++ )
 			{
-				if (gl_lms.allocated[i+j] >= best)
+				if ( r_newrefdef.lightstyles[surf.styles[map] & 0xFF].white != surf.cached_light[map] )
+				{
+					gotoDynamic = true;
 					break;
-				if (gl_lms.allocated[i+j] > best2)
-					best2 = gl_lms.allocated[i+j];
+				}
 			}
-			if (j == w)
-			{	// this is a valid spot
-				pos.x = x = i;
-				pos.y = best = best2;
-			}
-		}
 
-		if (best + h > BLOCK_HEIGHT)
-			return false;
-
-		for (i=0 ; i<w ; i++)
-			gl_lms.allocated[x + i] = best + h;
-
-		return true;
-	}
-
-	/**
-	 * GL_BuildPolygonFromSurface
-	 */
-	void GL_BuildPolygonFromSurface(msurface_t fa)
-	{
-		// reconstruct the polygon
-		medge_t[] pedges = currentmodel.edges;
-		int lnumverts = fa.numedges;
-		//
-		// draw texture
-		//
-		// poly = Hunk_Alloc (sizeof(glpoly_t) + (lnumverts-4) * VERTEXSIZE*sizeof(float));
-		glpoly_t poly = Polygon.create(lnumverts);
-
-		poly.next = fa.polys;
-		poly.flags = fa.flags;
-		fa.polys = poly;
-
-		int lindex;
-		float[] vec;
-		medge_t r_pedge;
-		float s, t;
-		for (int i=0 ; i<lnumverts ; i++)
-		{
-			lindex = currentmodel.surfedges[fa.firstedge + i];
-
-			if (lindex > 0)
+			if ( map == 4 )
+				map--;
+			var is_dynamic = false;
+			if ( gotoDynamic || ( surf.dlightframe == r_framecount ) )
 			{
-				r_pedge = pedges[lindex];
-				vec = currentmodel.vertexes[r_pedge.v[0]].position;
+				if ( gl_dynamic.value != 0 )
+				{
+					if ( ( surf.texinfo.flags & ( Defines.SURF_SKY | Defines.SURF_TRANS33 | Defines.SURF_TRANS66 | Defines.SURF_WARP ) ) == 0 )
+					{
+						is_dynamic = true;
+					}
+				}
+			}
+
+			glpoly_t p;
+			image_t image = R_TextureAnimation( surf.texinfo );
+			var lmtex = surf.lightmaptexturenum;
+			if ( is_dynamic )
+			{
+				Int32 smax, tmax;
+				if ( ( ( surf.styles[map] & 0xFF ) >= 32 || surf.styles[map] == 0 ) && ( surf.dlightframe != r_framecount ) )
+				{
+					smax = ( surf.extents[0] >> 4 ) + 1;
+					tmax = ( surf.extents[1] >> 4 ) + 1;
+					R_BuildLightMap( surf, temp, smax );
+					R_SetCacheState( surf );
+					GL_MBind( TextureUnit.Texture1, gl_state.lightmap_textures + surf.lightmaptexturenum );
+					lmtex = surf.lightmaptexturenum;
+					new Pinnable( temp, ( ptr ) =>
+					{
+						GL.TexSubImage2D( TextureTarget.Texture2D, 0, surf.light_s, surf.light_t, smax, tmax, GL_LIGHTMAP_FORMAT, PixelType.UnsignedByte, ptr );
+					} );
+				}
+				else
+				{
+					smax = ( surf.extents[0] >> 4 ) + 1;
+					tmax = ( surf.extents[1] >> 4 ) + 1;
+					R_BuildLightMap( surf, temp, smax );
+					GL_MBind( TextureUnit.Texture1, gl_state.lightmap_textures + 0 );
+					lmtex = 0;
+					new Pinnable( temp, ( ptr ) =>
+					{
+						GL.TexSubImage2D( TextureTarget.Texture2D, 0, surf.light_s, surf.light_t, smax, tmax, GL_LIGHTMAP_FORMAT, PixelType.UnsignedByte, ptr );
+					} );
+				}
+
+				c_brush_polys++;
+				GL_MBind( TextureUnit.Texture0, image.texnum );
+				GL_MBind( TextureUnit.Texture1, gl_state.lightmap_textures + lmtex );
+				if ( ( surf.texinfo.flags & Defines.SURF_FLOWING ) != 0 )
+				{
+					Single scroll;
+					scroll = -64 * ( ( r_newrefdef.time / 40F ) - ( Int32 ) ( r_newrefdef.time / 40F ) );
+					if ( scroll == 0F )
+						scroll = -64F;
+					for ( p = surf.polys; p != null; p = p.chain )
+					{
+						p.BeginScrolling( scroll );
+						GL.DrawArrays( PrimitiveType.Polygon, p.pos, p.numverts );
+						p.EndScrolling();
+					}
+				}
+				else
+				{
+					for ( p = surf.polys; p != null; p = p.chain )
+					{
+						GL.DrawArrays( PrimitiveType.Polygon, p.pos, p.numverts );
+					}
+				}
 			}
 			else
 			{
-				r_pedge = pedges[-lindex];
-				vec = currentmodel.vertexes[r_pedge.v[1]].position;
+				c_brush_polys++;
+				GL_MBind( TextureUnit.Texture0, image.texnum );
+				GL_MBind( TextureUnit.Texture1, gl_state.lightmap_textures + lmtex );
+				if ( ( surf.texinfo.flags & Defines.SURF_FLOWING ) != 0 )
+				{
+					Single scroll;
+					scroll = -64 * ( ( r_newrefdef.time / 40F ) - ( Int32 ) ( r_newrefdef.time / 40F ) );
+					if ( scroll == 0 )
+						scroll = -64F;
+					for ( p = surf.polys; p != null; p = p.chain )
+					{
+						p.BeginScrolling( scroll );
+						GL.DrawArrays( PrimitiveType.Polygon, p.pos, p.numverts );
+						p.EndScrolling();
+					}
+				}
+				else
+				{
+					for ( p = surf.polys; p != null; p = p.chain )
+					{
+						GL.DrawArrays( PrimitiveType.Polygon, p.pos, p.numverts );
+					}
+				}
 			}
-			s = Math3D.DotProduct (vec, fa.texinfo.vecs[0]) + fa.texinfo.vecs[0][3];
-			s /= fa.texinfo.image.width;
-
-			t = Math3D.DotProduct (vec, fa.texinfo.vecs[1]) + fa.texinfo.vecs[1][3];
-			t /= fa.texinfo.image.height;
-
-			poly.x(i, vec[0]);
-			poly.y(i, vec[1]);
-			poly.z(i, vec[2]);
-			
-			poly.s1(i, s);
-			poly.t1(i, t);
-
-			//
-			// lightmap texture coordinates
-			//
-			s = Math3D.DotProduct (vec, fa.texinfo.vecs[0]) + fa.texinfo.vecs[0][3];
-			s -= fa.texturemins[0];
-			s += fa.light_s*16;
-			s += 8;
-			s /= BLOCK_WIDTH*16; //fa.texinfo.texture.width;
-
-			t = Math3D.DotProduct (vec, fa.texinfo.vecs[1]) + fa.texinfo.vecs[1][3];
-			t -= fa.texturemins[1];
-			t += fa.light_t*16;
-			t += 8;
-			t /= BLOCK_HEIGHT*16; //fa.texinfo.texture.height;
-
-			poly.s2(i, s);
-			poly.t2(i, t);
 		}
-	}
 
-	/**
-	 * GL_CreateSurfaceLightmap
-	 */
-	void GL_CreateSurfaceLightmap(msurface_t surf)
-	{
-		if ( (surf.flags & (Defines.SURF_DRAWSKY | Defines.SURF_DRAWTURB)) != 0)
-			return;
-
-		int smax = (surf.extents[0]>>4)+1;
-		int tmax = (surf.extents[1]>>4)+1;
-		
-		pos_t lightPos = new pos_t(surf.light_s, surf.light_t);
-
-		if ( !LM_AllocBlock( smax, tmax, lightPos ) )
+		public virtual void R_DrawInlineBModel( )
 		{
-			LM_UploadBlock( false );
-			LM_InitBlock();
-			lightPos = new pos_t(surf.light_s, surf.light_t);
+			if ( gl_flashblend.value == 0 )
+			{
+				dlight_t lt;
+				for ( var k = 0; k < r_newrefdef.num_dlights; k++ )
+				{
+					lt = r_newrefdef.dlights[k];
+					R_MarkLights( lt, 1 << k, currentmodel.nodes[currentmodel.firstnode] );
+				}
+			}
+
+			var psurfp = currentmodel.firstmodelsurface;
+			msurface_t[] surfaces = currentmodel.surfaces;
+			if ( ( currententity.flags & Defines.RF_TRANSLUCENT ) != 0 )
+			{
+				GL.Enable( EnableCap.Blend );
+				GL.Color4( 1, 1, 1, 0.25F );
+				GL_TexEnv( ( Int32 ) All.Modulate );
+			}
+
+			msurface_t psurf;
+			cplane_t pplane;
+			Single dot;
+			for ( var i = 0; i < currentmodel.nummodelsurfaces; i++ )
+			{
+				psurf = surfaces[psurfp++];
+				pplane = psurf.plane;
+				dot = Math3D.DotProduct( modelorg, pplane.normal ) - pplane.dist;
+				if ( ( ( psurf.flags & Defines.SURF_PLANEBACK ) != 0 && ( dot < -BACKFACE_EPSILON ) ) || ( ( psurf.flags & Defines.SURF_PLANEBACK ) == 0 && ( dot > BACKFACE_EPSILON ) ) )
+				{
+					if ( ( psurf.texinfo.flags & ( Defines.SURF_TRANS33 | Defines.SURF_TRANS66 ) ) != 0 )
+					{
+						psurf.texturechain = r_alpha_surfaces;
+						r_alpha_surfaces = psurf;
+					}
+					else if ( ( psurf.flags & Defines.SURF_DRAWTURB ) == 0 )
+					{
+						GL_RenderLightmappedPoly( psurf );
+					}
+					else
+					{
+						GL_EnableMultitexture( false );
+						R_RenderBrushPoly( psurf );
+						GL_EnableMultitexture( true );
+					}
+				}
+			}
+
+			if ( ( currententity.flags & Defines.RF_TRANSLUCENT ) != 0 )
+			{
+				GL.Disable( EnableCap.Blend );
+				GL.Color4( 1, 1, 1, 1 );
+				GL_TexEnv( ( Int32 ) All.Replace );
+			}
+		}
+
+		private readonly Single[] mins = new Single[] { 0, 0, 0 };
+		private readonly Single[] maxs = new Single[] { 0, 0, 0 };
+		private readonly Single[] org = new Single[] { 0, 0, 0 };
+		private readonly Single[] forward = new Single[] { 0, 0, 0 };
+		private readonly Single[] right = new Single[] { 0, 0, 0 };
+		private readonly Single[] up = new Single[] { 0, 0, 0 };
+		public override void R_DrawBrushModel( entity_t e )
+		{
+			if ( currentmodel.nummodelsurfaces == 0 )
+				return;
+			currententity = e;
+			gl_state.currenttextures[0] = gl_state.currenttextures[1] = -1;
+			System.Boolean rotated;
+			if ( e.angles[0] != 0 || e.angles[1] != 0 || e.angles[2] != 0 )
+			{
+				rotated = true;
+				for ( var i = 0; i < 3; i++ )
+				{
+					mins[i] = e.origin[i] - currentmodel.radius;
+					maxs[i] = e.origin[i] + currentmodel.radius;
+				}
+			}
+			else
+			{
+				rotated = false;
+				Math3D.VectorAdd( e.origin, currentmodel.mins, mins );
+				Math3D.VectorAdd( e.origin, currentmodel.maxs, maxs );
+			}
+
+			if ( R_CullBox( mins, maxs ) )
+				return;
+			GL.Color3( 1, 1, 1 );
+			Math3D.VectorSubtract( r_newrefdef.vieworg, e.origin, modelorg );
+			if ( rotated )
+			{
+				Math3D.VectorCopy( modelorg, org );
+				Math3D.AngleVectors( e.angles, forward, right, up );
+				modelorg[0] = Math3D.DotProduct( org, forward );
+				modelorg[1] = -Math3D.DotProduct( org, right );
+				modelorg[2] = Math3D.DotProduct( org, up );
+			}
+
+			GL.PushMatrix();
+			e.angles[0] = -e.angles[0];
+			e.angles[2] = -e.angles[2];
+			R_RotateForEntity( e );
+			e.angles[0] = -e.angles[0];
+			e.angles[2] = -e.angles[2];
+			GL_EnableMultitexture( true );
+			GL_SelectTexture( TextureUnit.Texture0 );
+			GL_TexEnv( ( Int32 ) All.Replace );
+			GL.InterleavedArrays( InterleavedArrayFormat.T2fV3f, glpoly_t.BYTE_STRIDE, globalPolygonInterleavedBuf.Array );
+			GL_SelectTexture( TextureUnit.Texture1 );
+			GL_TexEnv( ( Int32 ) All.Modulate );
+
+			new Pinnable( globalPolygonTexCoord1Buf, ( ptr ) =>
+			{
+				GL.TexCoordPointer( 2, TexCoordPointerType.Float, glpoly_t.BYTE_STRIDE, ptr );
+			} );
+			GL.EnableClientState( ArrayCap.TextureCoordArray );
+			R_DrawInlineBModel();
+			GL.ClientActiveTexture( TextureUnit.Texture1 );
+			GL.DisableClientState( ArrayCap.TextureCoordArray );
+			GL_EnableMultitexture( false );
+			GL.PopMatrix();
+		}
+
+		public virtual void R_RecursiveWorldNode( mnode_t node )
+		{
+			if ( node.contents == Defines.CONTENTS_SOLID )
+				return;
+			if ( node.visframe != r_visframecount )
+				return;
+			if ( R_CullBox( node.mins, node.maxs ) )
+				return;
+			Int32 c;
+			msurface_t mark;
+			if ( node.contents != -1 )
+			{
+				mleaf_t pleaf = ( mleaf_t ) node;
+				if ( r_newrefdef.areabits != null )
+				{
+					if ( ( ( r_newrefdef.areabits[pleaf.area >> 3] & 0xFF ) & ( 1 << ( pleaf.area & 7 ) ) ) == 0 )
+						return;
+				}
+
+				var markp = 0;
+				mark = pleaf.GetMarkSurface( markp );
+				c = pleaf.nummarksurfaces;
+				if ( c != 0 )
+				{
+					do
+					{
+						mark.visframe = r_framecount;
+						mark = pleaf.GetMarkSurface( ++markp );
+					}
+					while ( --c != 0 );
+				}
+
+				return;
+			}
+
+			cplane_t plane = node.plane;
+			Single dot;
+			switch ( plane.type )
+
+			{
+				case Defines.PLANE_X:
+					dot = modelorg[0] - plane.dist;
+					break;
+				case Defines.PLANE_Y:
+					dot = modelorg[1] - plane.dist;
+					break;
+				case Defines.PLANE_Z:
+					dot = modelorg[2] - plane.dist;
+					break;
+				default:
+					dot = Math3D.DotProduct( modelorg, plane.normal ) - plane.dist;
+					break;
+			}
+
+			Int32 side, sidebit;
+			if ( dot >= 0F )
+			{
+				side = 0;
+				sidebit = 0;
+			}
+			else
+			{
+				side = 1;
+				sidebit = Defines.SURF_PLANEBACK;
+			}
+
+			R_RecursiveWorldNode( node.children[side] );
+			msurface_t surf;
+			image_t image;
+			for ( c = 0; c < node.numsurfaces; c++ )
+			{
+				surf = r_worldmodel.surfaces[node.firstsurface + c];
+				if ( surf.visframe != r_framecount )
+					continue;
+				if ( ( surf.flags & Defines.SURF_PLANEBACK ) != sidebit )
+					continue;
+				if ( ( surf.texinfo.flags & Defines.SURF_SKY ) != 0 )
+				{
+					R_AddSkySurface( surf );
+				}
+				else if ( ( surf.texinfo.flags & ( Defines.SURF_TRANS33 | Defines.SURF_TRANS66 ) ) != 0 )
+				{
+					surf.texturechain = r_alpha_surfaces;
+					r_alpha_surfaces = surf;
+				}
+				else
+				{
+					if ( ( surf.flags & Defines.SURF_DRAWTURB ) == 0 )
+					{
+						GL_RenderLightmappedPoly( surf );
+					}
+					else
+					{
+						image = R_TextureAnimation( surf.texinfo );
+						surf.texturechain = image.texturechain;
+						image.texturechain = surf;
+					}
+				}
+			}
+
+			R_RecursiveWorldNode( node.children[1 - side] );
+		}
+
+		private readonly entity_t worldEntity = new entity_t();
+		public override void R_DrawWorld( )
+		{
+			if ( r_drawworld.value == 0 )
+				return;
+			if ( ( r_newrefdef.rdflags & Defines.RDF_NOWORLDMODEL ) != 0 )
+				return;
+			currentmodel = r_worldmodel;
+			Math3D.VectorCopy( r_newrefdef.vieworg, modelorg );
+			entity_t ent = worldEntity;
+			ent.Clear();
+			ent.frame = ( Int32 ) ( r_newrefdef.time * 2 );
+			currententity = ent;
+			gl_state.currenttextures[0] = gl_state.currenttextures[1] = -1;
+			GL.Color3( 1, 1, 1 );
+			R_ClearSkyBox();
+			GL_EnableMultitexture( true );
+			GL_SelectTexture( TextureUnit.Texture0 );
+			GL_TexEnv( ( Int32 ) All.Replace );
+			GL.InterleavedArrays( InterleavedArrayFormat.T2fV3f, glpoly_t.BYTE_STRIDE, globalPolygonInterleavedBuf.Array );
+			GL_SelectTexture( TextureUnit.Texture1 );
+			new Pinnable( globalPolygonTexCoord1Buf, ( ptr ) =>
+			{
+				GL.TexCoordPointer( 2, TexCoordPointerType.Float, glpoly_t.BYTE_STRIDE, ptr );
+			} );
+			GL.EnableClientState( ArrayCap.TextureCoordArray );
+			if ( gl_lightmap.value != 0 )
+				GL_TexEnv( ( Int32 ) All.Replace );
+			else
+				GL_TexEnv( ( Int32 ) All.Modulate );
+			R_RecursiveWorldNode( r_worldmodel.nodes[0] );
+			GL.ClientActiveTexture( TextureUnit.Texture1 );
+			GL.DisableClientState( ArrayCap.TextureCoordArray );
+			GL_EnableMultitexture( false );
+			DrawTextureChains();
+			R_DrawSkyBox();
+			R_DrawTriangleOutlines();
+		}
+
+		readonly Byte[] fatvis = new Byte[Defines.MAX_MAP_LEAFS / 8];
+		public override void R_MarkLeaves( )
+		{
+			if ( r_oldviewcluster == r_viewcluster && r_oldviewcluster2 == r_viewcluster2 && r_novis.value == 0 && r_viewcluster != -1 )
+				return;
+			if ( gl_lockpvs.value != 0 )
+				return;
+			r_visframecount++;
+			r_oldviewcluster = r_viewcluster;
+			r_oldviewcluster2 = r_viewcluster2;
+			Int32 i;
+			if ( r_novis.value != 0 || r_viewcluster == -1 || r_worldmodel.vis == null )
+			{
+				for ( i = 0; i < r_worldmodel.numleafs; i++ )
+					r_worldmodel.leafs[i].visframe = r_visframecount;
+				for ( i = 0; i < r_worldmodel.numnodes; i++ )
+					r_worldmodel.nodes[i].visframe = r_visframecount;
+				return;
+			}
+
+			Byte[] vis = Mod_ClusterPVS( r_viewcluster, r_worldmodel );
+			Int32 c;
+			if ( r_viewcluster2 != r_viewcluster )
+			{
+				System.Array.Copy( vis, 0, fatvis, 0, ( r_worldmodel.numleafs + 7 ) >> 3 );
+				vis = Mod_ClusterPVS( r_viewcluster2, r_worldmodel );
+				c = ( r_worldmodel.numleafs + 31 ) >> 5;
+				c <<= 2;
+				for ( var k = 0; k < c; k += 4 )
+				{
+					fatvis[k] |= vis[k];
+					fatvis[k + 1] |= vis[k + 1];
+					fatvis[k + 2] |= vis[k + 2];
+					fatvis[k + 3] |= vis[k + 3];
+				}
+
+				vis = fatvis;
+			}
+
+			mnode_t node;
+			mleaf_t leaf;
+			Int32 cluster;
+			for ( i = 0; i < r_worldmodel.numleafs; i++ )
+			{
+				leaf = r_worldmodel.leafs[i];
+				cluster = leaf.cluster;
+				if ( cluster == -1 )
+					continue;
+				if ( ( ( vis[cluster >> 3] & 0xFF ) & ( 1 << ( cluster & 7 ) ) ) != 0 )
+				{
+					node = ( mnode_t ) leaf;
+					do
+					{
+						if ( node.visframe == r_visframecount )
+							break;
+						node.visframe = r_visframecount;
+						node = node.parent;
+					}
+					while ( node != null );
+				}
+			}
+		}
+
+		public virtual void LM_InitBlock( )
+		{
+			gl_lms.allocated.Fill( 0 );
+		}
+
+		public virtual void LM_UploadBlock( System.Boolean dynamic )
+		{
+			var texture = ( dynamic ) ? 0 : gl_lms.current_lightmap_texture;
+			GL_Bind( gl_state.lightmap_textures + texture );
+			GL.TexParameter( TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, ( Int32 ) All.Linear );
+			GL.TexParameter( TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, ( Int32 ) All.Linear );
+			gl_lms.lightmap_buffer.Rewind();
+
+			new Pinnable( gl_lms.lightmap_buffer, ( ptr ) =>
+			{
+				if ( dynamic )
+				{
+					var height = 0;
+					for ( var i = 0; i < BLOCK_WIDTH; i++ )
+					{
+						if ( gl_lms.allocated[i] > height )
+							height = gl_lms.allocated[i];
+					}
+
+					GL.TexSubImage2D( TextureTarget.Texture2D, 0, 0, 0, BLOCK_WIDTH, height, GL_LIGHTMAP_FORMAT, PixelType.UnsignedByte, ptr );
+				}
+				else
+				{
+					GL.TexImage2D( TextureTarget.Texture2D, 0, gl_lms.internal_format, BLOCK_WIDTH, BLOCK_HEIGHT, 0, GL_LIGHTMAP_FORMAT, PixelType.UnsignedByte, ptr );
+					if ( ++gl_lms.current_lightmap_texture == MAX_LIGHTMAPS )
+						Com.Error( Defines.ERR_DROP, "LM_UploadBlock() - MAX_LIGHTMAPS exceeded\\n" );
+				}
+			} );
+		}
+
+		public virtual System.Boolean LM_AllocBlock( Int32 w, Int32 h, pos_t pos )
+		{
+			var best = BLOCK_HEIGHT;
+			var x = pos.x;
+			Int32 best2;
+			Int32 i, j;
+			for ( i = 0; i < BLOCK_WIDTH - w; i++ )
+			{
+				best2 = 0;
+				for ( j = 0; j < w; j++ )
+				{
+					if ( gl_lms.allocated[i + j] >= best )
+						break;
+					if ( gl_lms.allocated[i + j] > best2 )
+						best2 = gl_lms.allocated[i + j];
+				}
+
+				if ( j == w )
+				{
+					pos.x = x = i;
+					pos.y = best = best2;
+				}
+			}
+
+			if ( best + h > BLOCK_HEIGHT )
+				return false;
+			for ( i = 0; i < w; i++ )
+				gl_lms.allocated[x + i] = best + h;
+			return true;
+		}
+
+		public virtual void GL_BuildPolygonFromSurface( msurface_t fa )
+		{
+			medge_t[] pedges = currentmodel.edges;
+			var lnumverts = fa.numedges;
+			glpoly_t poly = Polygon.Create( lnumverts );
+			poly.next = fa.polys;
+			poly.flags = fa.flags;
+			fa.polys = poly;
+			Int32 lindex;
+			Single[] vec;
+			medge_t r_pedge;
+			Single s, t;
+			for ( var i = 0; i < lnumverts; i++ )
+			{
+				lindex = currentmodel.surfedges[fa.firstedge + i];
+				if ( lindex > 0 )
+				{
+					r_pedge = pedges[lindex];
+					vec = currentmodel.vertexes[r_pedge.v[0]].position;
+				}
+				else
+				{
+					r_pedge = pedges[-lindex];
+					vec = currentmodel.vertexes[r_pedge.v[1]].position;
+				}
+
+				s = Math3D.DotProduct( vec, fa.texinfo.vecs[0] ) + fa.texinfo.vecs[0][3];
+				s /= fa.texinfo.image.width;
+				t = Math3D.DotProduct( vec, fa.texinfo.vecs[1] ) + fa.texinfo.vecs[1][3];
+				t /= fa.texinfo.image.height;
+				poly.X( i, vec[0] );
+				poly.Y( i, vec[1] );
+				poly.Z( i, vec[2] );
+				poly.S1( i, s );
+				poly.T1( i, t );
+				s = Math3D.DotProduct( vec, fa.texinfo.vecs[0] ) + fa.texinfo.vecs[0][3];
+				s -= fa.texturemins[0];
+				s += fa.light_s * 16;
+				s += 8;
+				s /= BLOCK_WIDTH * 16;
+				t = Math3D.DotProduct( vec, fa.texinfo.vecs[1] ) + fa.texinfo.vecs[1][3];
+				t -= fa.texturemins[1];
+				t += fa.light_t * 16;
+				t += 8;
+				t /= BLOCK_HEIGHT * 16;
+				poly.S2( i, s );
+				poly.T2( i, t );
+			}
+		}
+
+		public virtual void GL_CreateSurfaceLightmap( msurface_t surf )
+		{
+			if ( ( surf.flags & ( Defines.SURF_DRAWSKY | Defines.SURF_DRAWTURB ) ) != 0 )
+				return;
+			var smax = ( surf.extents[0] >> 4 ) + 1;
+			var tmax = ( surf.extents[1] >> 4 ) + 1;
+			pos_t lightPos = new pos_t( surf.light_s, surf.light_t );
 			if ( !LM_AllocBlock( smax, tmax, lightPos ) )
 			{
-				Com.Error( Defines.ERR_FATAL, "Consecutive calls to LM_AllocBlock(" + smax +"," + tmax +") failed\n");
+				LM_UploadBlock( false );
+				LM_InitBlock();
+				lightPos = new pos_t( surf.light_s, surf.light_t );
+				if ( !LM_AllocBlock( smax, tmax, lightPos ) )
+				{
+					Com.Error( Defines.ERR_FATAL, "Consecutive calls to LM_AllocBlock(" + smax + "," + tmax + ") failed\\n" );
+				}
 			}
+
+			surf.light_s = lightPos.x;
+			surf.light_t = lightPos.y;
+			surf.lightmaptexturenum = gl_lms.current_lightmap_texture;
+			Int32Buffer base_renamed = gl_lms.lightmap_buffer;
+			base_renamed.Position = surf.light_t * BLOCK_WIDTH + surf.light_s;
+			R_SetCacheState( surf );
+			R_BuildLightMap( surf, base_renamed.Slice(), BLOCK_WIDTH );
 		}
-		
-		// kopiere die koordinaten zurueck
-		surf.light_s = lightPos.x;
-		surf.light_t = lightPos.y;
 
-		surf.lightmaptexturenum = gl_lms.current_lightmap_texture;
-		
-		IntBuffer base = gl_lms.lightmap_buffer;
-		base.position(surf.light_t * BLOCK_WIDTH + surf.light_s);
-
-		R_SetCacheState( surf );
-		R_BuildLightMap(surf, base.slice(), BLOCK_WIDTH);
-	}
-
-	lightstyle_t[] lightstyles;
-	private final IntBuffer dummy = Lib.newIntBuffer(128*128);
-
-	/**
-	 * GL_BeginBuildingLightmaps
-	 */
-	void GL_BeginBuildingLightmaps(model_t m)
-	{
-		// static lightstyle_t	lightstyles[MAX_LIGHTSTYLES];
-		int i;
-
-		// init lightstyles
-		if ( lightstyles == null ) {
-			lightstyles = new lightstyle_t[Defines.MAX_LIGHTSTYLES];
-			for (i = 0; i < lightstyles.length; i++)
+		lightstyle_t[] lightstyles;
+		private readonly Int32Buffer dummy = Lib.NewInt32Buffer( 128 * 128 );
+		public virtual void GL_BeginBuildingLightmaps( model_t m )
+		{
+			Int32 i;
+			if ( lightstyles == null )
 			{
-				lightstyles[i] = new lightstyle_t();				
+				lightstyles = new lightstyle_t[Defines.MAX_LIGHTSTYLES];
+				for ( i = 0; i < lightstyles.Length; i++ )
+				{
+					lightstyles[i] = new lightstyle_t();
+				}
 			}
+
+			gl_lms.allocated.Fill( 0 );
+			r_framecount = 1;
+			GL_EnableMultitexture( true );
+			GL_SelectTexture( TextureUnit.Texture1 );
+			for ( i = 0; i < Defines.MAX_LIGHTSTYLES; i++ )
+			{
+				lightstyles[i].rgb[0] = 1;
+				lightstyles[i].rgb[1] = 1;
+				lightstyles[i].rgb[2] = 1;
+				lightstyles[i].white = 3;
+			}
+
+			r_newrefdef.lightstyles = lightstyles;
+			if ( gl_state.lightmap_textures == 0 )
+			{
+				gl_state.lightmap_textures = TEXNUM_LIGHTMAPS;
+			}
+
+			gl_lms.current_lightmap_texture = 1;
+			var format = gl_monolightmap.string_renamed.ToUpper()[0];
+			if ( format == 'A' )
+			{
+				gl_lms.internal_format = gl_tex_alpha_format;
+			}
+			else if ( format == 'C' )
+			{
+				gl_lms.internal_format = gl_tex_alpha_format;
+			}
+			else if ( format == 'I' )
+			{
+				gl_lms.internal_format = PixelInternalFormat.Intensity8;
+			}
+			else if ( format == 'L' )
+			{
+				gl_lms.internal_format = PixelInternalFormat.Luminance8;
+			}
+			else
+			{
+				gl_lms.internal_format = gl_tex_solid_format;
+			}
+
+			GL_Bind( gl_state.lightmap_textures + 0 );
+			GL.TexParameter( TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, ( Int32 ) All.Linear );
+			GL.TexParameter( TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, ( Int32 ) All.Linear );
+			new Pinnable( dummy, ( ptr ) =>
+			{
+				GL.TexImage2D( TextureTarget.Texture2D, 0, gl_lms.internal_format, BLOCK_WIDTH, BLOCK_HEIGHT, 0, GL_LIGHTMAP_FORMAT, PixelType.UnsignedByte, ptr );
+			} );
 		}
 
-		// memset( gl_lms.allocated, 0, sizeof(gl_lms.allocated) );
-		Arrays.fill(gl_lms.allocated, 0);
-
-		r_framecount = 1;		// no dlightcache
-
-		GL_EnableMultitexture( true );
-		GL_SelectTexture(TEXTURE1);
-
-		/*
-		** setup the base lightstyles so the lightmaps won't have to be regenerated
-		** the first time they're seen
-		*/
-		for (i=0 ; i < Defines.MAX_LIGHTSTYLES ; i++)
+		public virtual void GL_EndBuildingLightmaps( )
 		{
-			lightstyles[i].rgb[0] = 1;
-			lightstyles[i].rgb[1] = 1;
-			lightstyles[i].rgb[2] = 1;
-			lightstyles[i].white = 3;
-		}
-		r_newrefdef.lightstyles = lightstyles;
-
-		if (gl_state.lightmap_textures == 0)
-		{
-			gl_state.lightmap_textures = TEXNUM_LIGHTMAPS;
+			LM_UploadBlock( false );
+			GL_EnableMultitexture( false );
 		}
 
-		gl_lms.current_lightmap_texture = 1;
-
-		/*
-		** if mono lightmaps are enabled and we want to use alpha
-		** blending (a,1-a) then we're likely running on a 3DLabs
-		** Permedia2.  In a perfect world we'd use a GL_ALPHA lightmap
-		** in order to conserve space and maximize bandwidth, however 
-		** this isn't a perfect world.
-		**
-		** So we have to use alpha lightmaps, but stored in GL_RGBA format,
-		** which means we only get 1/16th the color resolution we should when
-		** using alpha lightmaps.  If we find another board that supports
-		** only alpha lightmaps but that can at least support the GL_ALPHA
-		** format then we should change this code to use real alpha maps.
-		*/
-		
-		char format = gl_monolightmap.string.toUpperCase().charAt(0);
-		
-		if ( format == 'A' )
+		static SingleBuffer globalPolygonInterleavedBuf = Polygon.GetInterleavedBuffer();
+		static SingleBuffer globalPolygonTexCoord1Buf = null;
+		static Surf( )
 		{
-			gl_lms.internal_format = gl_tex_alpha_format;
+			globalPolygonInterleavedBuf.Position = glpoly_t.STRIDE - 2;
+			globalPolygonTexCoord1Buf = globalPolygonInterleavedBuf.Slice();
+			globalPolygonInterleavedBuf.Position = 0;
 		}
-		/*
-		** try to do hacked colored lighting with a blended texture
-		*/
-		else if ( format == 'C' )
-		{
-			gl_lms.internal_format = gl_tex_alpha_format;
-		}
-		else if ( format == 'I' )
-		{
-			gl_lms.internal_format = GL_INTENSITY8;
-		}
-		else if ( format == 'L' ) 
-		{
-			gl_lms.internal_format = GL_LUMINANCE8;
-		}
-		else
-		{
-			gl_lms.internal_format = gl_tex_solid_format;
-		}
-
-		/*
-		** initialize the dynamic lightmap texture
-		*/
-		GL_Bind( gl_state.lightmap_textures + 0 );
-		gl.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		gl.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		gl.glTexImage2D( GL_TEXTURE_2D, 
-					   0, 
-					   gl_lms.internal_format,
-					   BLOCK_WIDTH, BLOCK_HEIGHT, 
-					   0, 
-					   GL_LIGHTMAP_FORMAT, 
-					   GL_UNSIGNED_BYTE, 
-					   dummy );
 	}
-
-	/**
-	 * GL_EndBuildingLightmaps
-	 */
-	void GL_EndBuildingLightmaps()
-	{
-		LM_UploadBlock( false );
-		GL_EnableMultitexture( false );
-	}
-	
-	/*
-	 * new buffers for vertex array handling
-	 */
-	static FloatBuffer globalPolygonInterleavedBuf = Polygon.getInterleavedBuffer();
-	static FloatBuffer globalPolygonTexCoord1Buf = null;
-
-	static {
-	 	globalPolygonInterleavedBuf.position(glpoly_t.STRIDE - 2);
-	 	globalPolygonTexCoord1Buf = globalPolygonInterleavedBuf.slice();
-		globalPolygonInterleavedBuf.position(0);
-	 };
-
-	//ImageFrame frame;
-	
-//	void debugLightmap(byte[] buf, int w, int h, float scale) {
-//		IntBuffer pix = ByteBuffer.wrap(buf).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer();
-//		
-//		int[] pixel = new int[w * h];
-//		
-//		pix.get(pixel);
-//		
-//		BufferedImage image = new BufferedImage(w, h, BufferedImage.TYPE_4BYTE_ABGR);
-//		image.setRGB(0,  0, w, h, pixel, 0, w);
-//		AffineTransformOp op = new AffineTransformOp(AffineTransform.getScaleInstance(scale, scale), AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-//		BufferedImage tmp = op.filter(image, null);
-//		
-//		if (frame == null) {
-//			frame = new ImageFrame(null);
-//			frame.show();
-//		} 
-//		frame.showImage(tmp);
-//		
-//	}
-
 }

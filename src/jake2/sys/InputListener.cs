@@ -1,117 +1,99 @@
-/*
- * InputListener.java
- * Copyright (C) 2004
- * 
- * $Id: InputListener.java,v 1.6 2005-06-06 18:22:20 hzi Exp $
- */
-/*
-Copyright (C) 1997-2001 Id Software, Inc.
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
+using System.Collections.Concurrent;
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
+namespace Jake2.Sys
+{
+	public sealed class InputListener
+	{
+		private static ConcurrentQueue<Jake2InputEvent> eventQueue = new ConcurrentQueue<Jake2InputEvent>();
+		static void AddEvent( Jake2InputEvent ev )
+		{
+			eventQueue.Enqueue( ev );
+		}
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+		public static Jake2InputEvent NextEvent( )
+		{
+			eventQueue.TryDequeue( out var ev );
+			return ev;
+		}
 
-See the GNU General Public License for more details.
+		public void KeyPressed( KeyboardKeyEventArgs e )
+		{
+			if ( !( ( e.Modifiers & KeyModifiers.Alt ) != 0 ) )
+			{
+				AddEvent( new Jake2InputEvent( InputEvent.KeyPress, e, JOGLKBD.c ) );
+			}
+		}
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+		public void KeyReleased( KeyboardKeyEventArgs e )
+		{
+			AddEvent( new Jake2InputEvent( InputEvent.KeyRelease, e, JOGLKBD.c ) );
+		}
 
-*/
-package jake2.sys;
+		public void KeyTyped( TextInputEventArgs e )
+		{
+			//if ( !( ( e.Modifiers & KeyModifiers.Alt ) != 0 ) )
+			//{
+			AddEvent( new Jake2InputEvent( InputEvent.KeyPress, e, JOGLKBD.c ) );
+			AddEvent( new Jake2InputEvent( InputEvent.KeyRelease, e, JOGLKBD.c ) );
+			//}
+		}
 
-import java.awt.event.*;
-import java.util.LinkedList;
+		public void MouseClicked( MouseButtonEventArgs e )
+		{
+		}
 
-/**
- * InputListener
- */
-public final class InputListener implements KeyListener, MouseListener, 
-		MouseMotionListener, ComponentListener, MouseWheelListener {
+		public void MouseEntered( )
+		{
+		}
 
-	// modifications of eventQueue must be thread safe!
-	private static LinkedList eventQueue = new LinkedList();
+		public void MouseExited( )
+		{
+		}
 
-	static void addEvent(Jake2InputEvent ev) {
-		synchronized (eventQueue) {
-			eventQueue.addLast(ev);
+		public void MousePressed( MouseButtonEventArgs e )
+		{
+			AddEvent( new Jake2InputEvent( InputEvent.ButtonPress, e, JOGLKBD.c ) );
+		}
+
+		public void MouseReleased( MouseButtonEventArgs e )
+		{
+			AddEvent( new Jake2InputEvent( InputEvent.ButtonRelease, e, JOGLKBD.c ) );
+		}
+
+		public void MouseDragged( MouseMoveEventArgs e )
+		{
+			AddEvent( new Jake2InputEvent( InputEvent.MotionNotify, e, JOGLKBD.c ) );
+		}
+
+		public void MouseMoved( MouseMoveEventArgs e )
+		{
+			AddEvent( new Jake2InputEvent( InputEvent.MotionNotify, e, JOGLKBD.c ) );
+		}
+
+		public void ComponentHidden( MinimizedEventArgs e )
+		{
+		}
+
+		public void ComponentMoved( WindowPositionEventArgs e )
+		{
+			AddEvent( new Jake2InputEvent( InputEvent.ConfigureNotify, e, JOGLKBD.c ) );
+		}
+
+		public void ComponentResized( ResizeEventArgs e )
+		{
+			AddEvent( new Jake2InputEvent( InputEvent.ConfigureNotify, e, JOGLKBD.c ) );
+		}
+
+		public void ComponentShown( MaximizedEventArgs e )
+		{
+			AddEvent( new Jake2InputEvent( InputEvent.CreateNotify, e, JOGLKBD.c ) );
+		}
+
+		public void MouseWheelMoved( MouseWheelEventArgs e )
+		{
+			AddEvent( new Jake2InputEvent( InputEvent.WheelMoved, e, JOGLKBD.c ) );
 		}
 	}
-
-	static Jake2InputEvent nextEvent() {
-		Jake2InputEvent ev;
-		synchronized (eventQueue) {
-			ev = (!eventQueue.isEmpty())?(Jake2InputEvent)eventQueue.removeFirst():null;
-		}
-		return ev;
-	}
-
-	public void keyPressed(KeyEvent e) {
-		if (!((e.getModifiersEx() & InputEvent.ALT_GRAPH_DOWN_MASK) != 0)) {
-			addEvent(new Jake2InputEvent(Jake2InputEvent.KeyPress, e));
-		}
-	}
-
-	public void keyReleased(KeyEvent e) {
-		addEvent(new Jake2InputEvent(Jake2InputEvent.KeyRelease, e));
-	}
-
-	public void keyTyped(KeyEvent e) {
-		if ((e.getModifiersEx() & InputEvent.ALT_GRAPH_DOWN_MASK) != 0) {
-			addEvent(new Jake2InputEvent(Jake2InputEvent.KeyPress, e));
-			addEvent(new Jake2InputEvent(Jake2InputEvent.KeyRelease, e));
-		}		
-	}
-
-	public void mouseClicked(MouseEvent e) {
-	}
-
-	public void mouseEntered(MouseEvent e) {
-	}
-
-	public void mouseExited(MouseEvent e) {
-	}
-
-	public void mousePressed(MouseEvent e) {
-		addEvent(new Jake2InputEvent(Jake2InputEvent.ButtonPress, e));
-	}
-
-	public void mouseReleased(MouseEvent e) {
-		addEvent(new Jake2InputEvent(Jake2InputEvent.ButtonRelease, e));
-	}
-
-	public void mouseDragged(MouseEvent e) {
-		addEvent(new Jake2InputEvent(Jake2InputEvent.MotionNotify, e));
-	}
-
-	public void mouseMoved(MouseEvent e) {
-		addEvent(new Jake2InputEvent(Jake2InputEvent.MotionNotify, e));
-	}
-
-	public void componentHidden(ComponentEvent e) {
-	}
-
-	public void componentMoved(ComponentEvent e) {
-		addEvent(new Jake2InputEvent(Jake2InputEvent.ConfigureNotify, e));
-	}
-
-	public void componentResized(ComponentEvent e) {
-		addEvent(new Jake2InputEvent(Jake2InputEvent.ConfigureNotify, e));
-	}
-
-	public void componentShown(ComponentEvent e) {
-		JOGLKBD.c = e.getComponent();
-		addEvent(new Jake2InputEvent(Jake2InputEvent.CreateNotify, e));
-	}
-
-    public void mouseWheelMoved(MouseWheelEvent e) {
-        addEvent(new Jake2InputEvent(Jake2InputEvent.WheelMoved, e));
-    }	
-
 }
-

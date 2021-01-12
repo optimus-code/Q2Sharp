@@ -1,32 +1,39 @@
-/*
- * Timer.java
- * Copyright (C) 2005
- */
-package jake2.sys;
+using Jake2.Qcommon;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
-import jake2.Globals;
-import jake2.qcommon.Com;
+namespace Jake2.Sys
+{
+    public abstract class Timer
+    {
+        public abstract long CurrentTimeMillis();
+        static Timer t;
+        static Timer()
+        {
+            try
+            {
+                t = new NanoTimer();
+            }
+            catch (Exception e)
+            {
+                try
+                {
+                    t = new HighPrecisionTimer();
+                }
+                catch ( Exception e1 )
+                {
+                    t = new StandardTimer();
+                }
+            }
 
+            Com.Println("using " + t.GetType().Name);
+        }
 
-public abstract class Timer {
-
-	abstract public long currentTimeMillis();
-	static Timer t;
-	
-	static {
-		try {
-			t = new NanoTimer();
-		} catch (Throwable e) {
-			try {
-				t = new HighPrecisionTimer();
-			} catch (Throwable e1) {
-				t = new StandardTimer();
-			}
-		}
-		Com.Println("using " + t.getClass().getName());
-	}
-	
-	public static int Milliseconds() {
-		return Globals.curtime = (int)(t.currentTimeMillis());
-	}
+        public static int Milliseconds()
+        {
+            return Globals.curtime = (int)(t.CurrentTimeMillis());
+        }
+    }
 }

@@ -1,181 +1,164 @@
-/*
- * SND_JAVA.java
- * Copyright (C) 2004
- * 
- * $Id: SND_JAVA.java,v 1.1 2004-07-09 06:50:48 hzi Exp $
- */
-/*
-Copyright (C) 1997-2001 Id Software, Inc.
+using Jake2.Game;
+using Jake2.Qcommon;
+using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
+using SharpAudio;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
+namespace Jake2.Sound.Jsound
+{
+    public class SND_JAVA : Globals
+    {
+        static bool snd_inited = false;
+        static cvar_t sndbits;
+        static cvar_t sndspeed;
+        static cvar_t sndchannels;
+        public class dma_t
+        {
+            public int channels;
+            public int samples;
+            public int submission_chunk;
+            public int samplebits;
+            public int speed;
+            public byte[] buffer;
+        }
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        public static SND_DMA.dma_t dma = new dma_t();
+        public class SoundThread : IDisposable
+        {
+            byte[] b;
+            AudioEngine l;
+            int pos = 0;
+            bool running = false;
+            private Thread currentThread;
 
-See the GNU General Public License for more details.
+            public SoundThread(byte[] buffer, AudioEngine line )
+            {
+                b = buffer;
+                l = line;
+            }
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+            public virtual void Start()
+			{
+                currentThread = new Thread( Run );
+                currentThread.Name = "SoundStream";
+                currentThread.Start();
+            }
 
-*/
-package jake2.sound.jsound;
+            public virtual void Run()
+            {
+                running = true;
+                while (running)
+                {
+                    line.Write(b, pos, 512);
+                    pos = (pos + 512) % b.Length;
+                }
+            }
 
-import jake2.Globals;
-import jake2.game.cvar_t;
-import jake2.qcommon.Cvar;
+            public virtual void StopLoop()
+            {
+                lock (this)
+                {
+                    running = false;
+                }
+            }
 
-import javax.sound.sampled.*;
+            public virtual int GetSamplePos()
+            {
+                return pos >> 1;
+            }
 
-/**
- * SND_JAVA
- */
-public class SND_JAVA extends Globals {
-
-	static boolean snd_inited= false;
-
-	static cvar_t sndbits;
-	static cvar_t sndspeed;
-	static cvar_t sndchannels;
-
-	static class dma_t {
-		int channels;
-		int samples; // mono samples in buffer
-		int submission_chunk; // don't mix less than this #
-		//int samplepos; // in mono samples
-		int samplebits;
-		int speed;
-		byte[] buffer;
-	}
-  	static SND_DMA.dma_t dma = new dma_t();
-  	
-  	static class SoundThread extends Thread {
-  		byte[] b;
-		SourceDataLine l;
-		int pos = 0;
-		boolean running = false;
-  		public SoundThread(byte[] buffer, SourceDataLine line) {
-  			b = buffer;
-  			l = line;
-  		}
-  		public void run() {
-  			running = true;
-  			while (running) {
-  				line.write(b, pos, 512);
-  				pos = (pos+512) % b.length;
-  			}
-  		}
-  		public synchronized void stopLoop() {
-  			running = false;
-  		}
-  		public int getSamplePos() {
-  			return pos >> 1;
-  		}
-  	}
-  	static SoundThread thread;
-	static SourceDataLine line;
-	static AudioFormat format;
-
-
-	static boolean SNDDMA_Init() {
-
-		if (snd_inited)
-			return true;
-
-		if (sndbits == null) {
-			sndbits = Cvar.Get("sndbits", "16", CVAR_ARCHIVE);
-			sndspeed = Cvar.Get("sndspeed", "0", CVAR_ARCHIVE);
-			sndchannels = Cvar.Get("sndchannels", "1", CVAR_ARCHIVE);
-		}
-		
-//		byte[] sound = FS.LoadFile("sound/misc/menu1.wav");
-//		AudioInputStream stream;
-//		try {
-//			stream = AudioSystem.getAudioInputStream(new ByteArrayInputStream(sound));
-//		} catch (UnsupportedAudioFileException e) {
-//			return false;
-//		} catch (IOException e) {
-//			return false;
-//		}
-		//format = stream.getFormat();
-		format = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 22050, 16, 1, 2, 22050, false);
-		DataLine.Info dinfo = new DataLine.Info(SourceDataLine.class, format);
-		
-		try {
-			line = (SourceDataLine)AudioSystem.getLine(dinfo);
-		} catch (LineUnavailableException e4) {
-			return false; 
-		}
-		
-		dma.buffer = new byte[65536];				
-		dma.channels = format.getChannels();
-		dma.samplebits = format.getSampleSizeInBits();
-		dma.samples = dma.buffer.length / format.getFrameSize();
-		dma.speed = (int)format.getSampleRate();
-		//dma.samplepos = 0;
-		dma.submission_chunk = 1;
-		
-		try {
-			line.open(format, 4096);
-		} catch (LineUnavailableException e5) {
-			return false;
+			public virtual void Dispose( )
+			{
+                running = false;
+                currentThread.Join();
+            }
 		}
 
-		line.start();
-		thread = new SoundThread(dma.buffer, line);
-		//thread.setPriority(Thread.MAX_PRIORITY);
-		thread.start();
-				
-		snd_inited = true;
-		return true;
+        static SoundThread thread;
+        static AudioEngine audioEngine;
+        static AudioBuffer audioBuffer;
+        static AudioSource audioSource;
+        static AudioFormat format;
+        public static bool SNDDMA_Init()
+        {
+            if (snd_inited)
+                return true;
+            if (sndbits == null)
+            {
+                sndbits = Cvar.Get("sndbits", "16", CVAR_ARCHIVE);
+                sndspeed = Cvar.Get("sndspeed", "0", CVAR_ARCHIVE);
+                sndchannels = Cvar.Get("sndchannels", "1", CVAR_ARCHIVE);
+            }
 
-	}
+            audioEngine = AudioEngine.CreateOpenAL();
+            audioBuffer = audioEngine.CreateBuffer();
+            audioSource = audioEngine.CreateSource();
 
-	static int SNDDMA_GetDMAPos() {		
-		//dma.samplepos = line.getFramePosition() % dma.samples;
-		return thread.getSamplePos(); //dma.samplepos;
-	}
+            format = new AudioFormat();
+            format.BitsPerSample = 16;
+            format.Channels = 2;
+            format.SampleRate = 22050;
 
-	static void SNDDMA_Shutdown() {
-		thread.stopLoop();
-		line.stop();
-		line.flush();
-		line.close();
-		line=null;
-		snd_inited = false;		
-	}
+            audioBuffer.BufferData( dma.buffer, format );
+            audioSource.QueueBuffer( audioBuffer );
 
-	/*
-	==============
-	SNDDMA_Submit
+            dma.buffer = new byte[65536];
+            dma.channels = format.Channels;
+            dma.samplebits = format.BitsPerSample;
+            dma.samples = dma.buffer.Length / format.BytesPerSample;
+            dma.speed = (int)format.SampleRate;
+            dma.submission_chunk = 1;
 
-	Send sound to device if buffer isn't really the dma buffer
-	===============
-	*/
-	public static void SNDDMA_Submit() {
-//		runLine();
-	}
+            thread = new SoundThread(dma.buffer, audioEngine);
+            thread.Start();
+            snd_inited = true;
+            return true;
+        }
 
-	static void SNDDMA_BeginPainting() {}
+        public static int SNDDMA_GetDMAPos()
+        {
+            return thread.GetSamplePos();
+        }
 
-//	private static int pos = 0;
-//	static void runLine() {
-//		
-//		int p = line.getFramePosition() * format.getFrameSize() % dma.buffer.length;
-//		if (p == 0) {
-//			writeLine();	
-//		}
-//		else if (pos - p < 4096 ) writeLine();		
-//	}
-//	
-//	static void writeLine() {
-//		line.write(dma.buffer, pos, 4096);
-//		pos+=4096;
-//		if (pos>=dma.buffer.length) pos = 0;		
-//	}
+        public static void SNDDMA_Shutdown()
+        {
+            thread.StopLoop();
+            thread.Dispose();            
+            audioEngine.Dispose();
+            snd_inited = false;
+        }
 
+        public static void SNDDMA_Submit()
+        {
+        }
+
+        public static void SNDDMA_BeginPainting()
+        {
+        }
+    }
+
+    public class TestStereoProvider : WaveProvider16
+    {
+        public TestStereoProvider( )
+            : base( 22050, 2 )
+        { }
+
+        short current;
+
+        public override int Read( short[] buffer, int offset, int sampleCount )
+        {
+            for ( int sample = 0; sample < sampleCount; sample += 2 )
+            {
+                buffer[offset + sample] = current;
+                buffer[offset + sample + 1] = ( short ) ( 0 - current );
+                current++;
+            }
+            return sampleCount;
+        }
+    }
 }

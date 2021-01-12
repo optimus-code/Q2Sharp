@@ -1,383 +1,430 @@
-/*
-Copyright (C) 1997-2001 Id Software, Inc.
+using J2N.IO;
+using J2N.Text;
+using Jake2.Qcommon;
+using OpenTK.Windowing.GraphicsLibraryFramework;
+using System;
+using System.IO;
+using System.Text;
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
-See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-*/
-
-// Created on 09.12.2003 by RST.
-// $Id: Lib.java,v 1.19 2007-05-14 22:18:29 cawe Exp $
-
-package jake2.util;
-
-import jake2.Globals;
-import jake2.qcommon.Com;
-import jake2.qcommon.FS;
-
-import java.io.*;
-import java.nio.*;
-
-public class Lib {
-
-
-	/** Converts a vector to a string. */
-	public static String vtos(float[] v) {
-		return (int) v[0] + " " + (int) v[1] + " " + (int) v[2];
-	}
-	
-	/** Converts a vector to a string. */
-	public static String vtofs(float[] v) {
-		return v[0] + " " + v[1] + " " + v[2];
-	}
-	
-	/** Converts a vector to a beatiful string. */
-	public static String vtofsbeaty(float[] v) {
-		return Com.sprintf("%8.2f %8.2f %8.2f", new Vargs().add(v[0]).add(v[1]).add(v[2]));
-	}
-	
-	/** Like in  libc. */
-	public static short rand() {
-		return (short)Globals.rnd.nextInt(Short.MAX_VALUE+1);
-	}
-	
-	/** Like in libc. */
-	public static float crandom() {
-		return (Globals.rnd.nextFloat() - 0.5f) * 2.0f;
-	}
-	
-	/** Like in libc. */
-	public static float random() {
-		return Globals.rnd.nextFloat();
-	}
-	
-	/** Like in libc. */
-	public static float crand() {
-		return (Globals.rnd.nextFloat() - 0.5f) * 2.0f;
-	}
-	
-	/** Like in libc. */
-	public static int strcmp(String in1, String in2) {
-		return in1.compareTo(in2);
-	}
-
-	/** Like in libc. */
-	public static float atof(String in) {
-		if (in == null || in.length() == 0)
-			return 0;
-		try {
-			return Float.parseFloat(in);
-		} catch (Exception e) {
-			return 0;
+namespace Jake2.Util
+{
+	public static class Lib
+	{
+		public static String Vtos( Single[] v )
+		{
+			return ( Int32 ) v[0] + " " + ( Int32 ) v[1] + " " + ( Int32 ) v[2];
 		}
-	}
-	
-	/** Like in quake2. */
-	public static int Q_stricmp(String in1, String in2) {
-		return in1.compareToIgnoreCase(in2);
-	}
-	
-	/** Like in libc. */
-	public static int atoi(String in) {
-		try {
-			return Integer.parseInt(in);
+
+		public static String Vtofs( Single[] v )
+		{
+			return v[0] + " " + v[1] + " " + v[2];
 		}
-		catch (Exception e) {
-			try {
-				return (int)Double.parseDouble(in);
-			} catch (Exception e1) {
+
+		public static String Vtofsbeaty( Single[] v )
+		{
+			return Com.Sprintf( "%8.2f %8.2f %8.2f", v[0], v[1], v[2] );
+		}
+
+		public static Int16 Rand( )
+		{
+			return ( Int16 ) Globals.rnd.Next( Int16.MaxValue + 1 );
+		}
+
+		public static Single Crandom( )
+		{
+			return ( ( Single ) Globals.rnd.NextDouble() - 0.5F ) * 2F;
+		}
+
+		public static Single Random( )
+		{
+			return ( Single ) Globals.rnd.NextDouble();
+		}
+
+		public static Single Crand( )
+		{
+			return ( Single ) ( Globals.rnd.NextDouble() - 0.5F ) * 2F;
+		}
+
+		public static Int32 Strcmp( String in1, String in2 )
+		{
+			return in1.CompareTo( in2 );
+		}
+
+		public static Single Atof( String in_renamed )
+		{
+			if ( in_renamed == null || in_renamed.Length == 0 )
+				return 0;
+			try
+			{
+				return Single.Parse( in_renamed );
+			}
+			catch ( Exception e )
+			{
 				return 0;
 			}
 		}
-	}
-	
-	/** Converts a string to a vector. Needs improvement. */
-	public static float[] atov(String v) {
-		float[] res = { 0, 0, 0 };
-		String strres[] = v.split(" ");
-		for (int n=0; n < 3 && n < strres.length; n++)
+
+		public static Int32 Q_stricmp( String in1, String in2 )
 		{
-			res[n] = atof(strres[n]);
+			return String.Compare( in1, in2, true );
 		}
-		return res;
-	}
 
-	/** Like in libc. */
-	public static int strlen(char in[]) {
-		for (int i = 0; i < in.length; i++)
-			if (in[i] == 0)
-				return i;
-		return in.length;
-	}
-	
-	/** Like in libc. */
-	public static int strlen(byte in[]) {
-		for (int i = 0; i < in.length; i++)
-			if (in[i] == 0)
-				return i;
-		return in.length;
-	}
-
-	/** Converts memory to a memory dump string. */
-	public static String hexdumpfile(ByteBuffer bb, int len) throws IOException {
-	
-		ByteBuffer bb1 = bb.slice();
-	
-		byte buf[] = new byte[len];
-	
-		bb1.get(buf);
-	
-		return hexDump(buf, len, false);
-	}
-	
-	/** Converts memory to a memory dump string. */
-	public static String hexDump(byte data1[], int len, boolean showAddress) {
-		StringBuffer result = new StringBuffer();
-		StringBuffer charfield = new StringBuffer();
-		int i = 0;
-		while (i < len) {
-			if ((i & 0xf) == 0) {
-				if (showAddress) {
-					String address = Integer.toHexString(i);
-					address = ("0000".substring(0, 4 - address.length()) + address).toUpperCase();
-					result.append(address + ": ");
+		public static Int32 Atoi( String in_renamed )
+		{
+			try
+			{
+				return Int32.Parse( in_renamed );
+			}
+			catch ( Exception e )
+			{
+				try
+				{
+					return ( Int32 ) Double.Parse( in_renamed );
+				}
+				catch ( Exception e1 )
+				{
+					return 0;
 				}
 			}
-			int v = data1[i];
-	
-			result.append(hex2(v));
-			result.append(" ");
-	
-			charfield.append(readableChar(v));
-			i++;
-	
-			// nach dem letzten, newline einfuegen
-			if ((i & 0xf) == 0) {
-				result.append(charfield);
-				result.append("\n");
-				charfield.setLength(0);
-			}
-			//	in der Mitte ein Luecke einfuegen ?
-			else if ((i & 0xf) == 8) {
-				result.append(" ");
-			}
 		}
-		return result.toString();
-	}
-	
-	/** Formats an hex byte. */
-	public static String hex2(int i) {
-		String val = Integer.toHexString(i & 0xff);
-		return ("00".substring(0, 2 - val.length()) + val).toUpperCase();	
-	}
-	
-	/** Returns true if the char is alphanumeric. */
-	public static char readableChar(int i) {
-		if ((i < 0x20) || (i > 0x7f))
-			return '.';
-		else
-			return (char) i;
-	}
-	
-	/** Prints a vector to the quake console. */
-	public static void printv(String in, float arr[]) {
-		for (int n = 0; n < arr.length; n++) {
-			Com.Println(in + "[" + n + "]: " + arr[n]);
-		}
-	}
-	
-	static final byte nullfiller[] = new byte[8192];
-		
-	/** Like in libc. */
-	public static void fwriteString(String s, int len, RandomAccessFile f) throws IOException {
-		if (s ==  null) 
-			return;
-		int diff = len - s.length();
-		if (diff > 0) {
-			f.write(stringToBytes(s));
-	
-			f.write(nullfiller, 0, diff);
-		}
-		else
-			f.write(stringToBytes(s), 0, len);
-	}
-	
-	/** Like in libc */
-	public static RandomAccessFile fopen(String name, String mode) {
-		try {
-			return new RandomAccessFile(name, mode);
-		}
-		catch (Exception e) {
-			Com.DPrintf("Could not open file:" + name);
-			return null;
-		}
-	}
-	
-	/** Like in libc */
-	public static void fclose(RandomAccessFile f) {
-		try {
-			f.close();
-		}
-		catch (Exception e) {
-		}
-	}
-	
-	/** Like in libc */
-	public static String freadString(RandomAccessFile f, int len) {
-		byte buffer[] = new byte[len];
-		FS.Read(buffer, len, f);
-	
-		return Lib.CtoJava(buffer);
-	}
-	
-	/** Returns the right part of the string from the last occruence of c. */
-	public static String rightFrom(String in, char c) {
-		int pos = in.lastIndexOf(c);
-		if (pos == -1)
-			return "";
-		else if (pos < in.length())
-			return in.substring(pos + 1, in.length());
-		return "";
-	}
-	
-	/** Returns the left part of the string from the last occruence of c. */
-	public static String leftFrom(String in, char c) {
-		int pos = in.lastIndexOf(c);
-		if (pos == -1)
-			return "";
-		else if (pos < in.length())
-			return in.substring(0, pos);
-		return "";
-	}
 
-	/** Renames a file. */
-	public static int rename(String oldn, String newn) {
-		try {
-			File f1 = new File(oldn);
-			File f2 = new File(newn);
-			f1.renameTo(f2);
-			return 0;
-		}
-		catch (Exception e) {
-			return 1;
-		}
-	}
-	
-	/** Converts an int to 4 bytes java representation. */
-	public static byte[] getIntBytes(int c) {
-		byte b[] = new byte[4];
-		b[0] = (byte) ((c & 0xff));
-		b[1] = (byte) ((c >>> 8) & 0xff);
-		b[2] = (byte) ((c >>> 16) & 0xff);
-		b[3] = (byte) ((c >>> 24) & 0xff);
-		return b;
-	}
-	
-	/** Converts an 4 bytes java int representation to an int. */
-	public static int getInt(byte b[]) {
-		return (b[0] & 0xff) | ((b[1] & 0xff) << 8) | ((b[2] & 0xff) << 16) | ((b[3] & 0xff) << 24);
-	}
-	
-	/** Duplicates a float array. */
-	public static float[] clone(float in[]) {
-		float out[] = new float[in.length];
-	
-		if (in.length != 0)
-			System.arraycopy(in, 0, out, 0, in.length);
-	
-		return out;
-	}
-    
-    /** 
-     * convert a java string to byte[] with 8bit latin 1
-     * 
-     * avoid String.getBytes() because it is using system specific character encoding.
-     */
-    public static byte[] stringToBytes(String value) {
-        try {
-           return value.getBytes("ISO-8859-1");
-        } catch (UnsupportedEncodingException e) {
-            // can't happen: Latin 1 is a standard encoding
-            return null;
-        }
-    }
-    
-    /** 
-     * convert a byte[] with 8bit latin 1 to java string
-     * 
-     * avoid new String(bytes) because it is using system specific character encoding.
-     */
-    public static String bytesToString(byte[] value) {
-        try {
-           return new String(value, "ISO-8859-1");
-        } catch (UnsupportedEncodingException e) {
-            // can't happen: Latin 1 is a standard encoding
-            return null;
-        }
-    }
-	
-	/** Helper method that savely handles the null termination of old C String data. */
-	public static String CtoJava(String old) {
-	    int index = old.indexOf('\0');
-	    if (index == 0) return "";
-	    return (index > 0) ? old.substring(0, index) : old; 
-	}
-	
-	/** Helper method that savely handles the null termination of old C String data. */
-	public static String CtoJava(byte[] old) {
-		return CtoJava(old, 0, old.length);
-	}
+		public static Single[] Atov( String v )
+		{
+			Single[] res = new[] { 0f, 0f, 0f };
+			String[] strres = v.Split( " " );
+			for ( var n = 0; n < 3 && n < strres.Length; n++ )
+			{
+				res[n] = Atof( strres[n] );
+			}
 
-	/** Helper method that savely handles the null termination of old C String data. */
-	public static String CtoJava(byte[] old, int offset, int maxLenght) {
-		if (old.length == 0 || old[0] == 0) return "";
-	    int i;
-	    for (i = offset; (i - offset) < maxLenght && old[i] != 0; i++);
-		return new String(old, offset, i - offset);
-	}
-	
-	
-	/* java.nio.* Buffer util functions */
-	
-	public static final int SIZEOF_FLOAT = 4;
-	public static final int SIZEOF_INT = 4;
-	
-	public static FloatBuffer newFloatBuffer(int numElements) {
-	  ByteBuffer bb = newByteBuffer(numElements * SIZEOF_FLOAT);
-	  return bb.asFloatBuffer();
-	}
-	public static FloatBuffer newFloatBuffer(int numElements, ByteOrder order) {
-	  ByteBuffer bb = newByteBuffer(numElements * SIZEOF_FLOAT, order);
-	  return bb.asFloatBuffer();
-	}
-	public static IntBuffer newIntBuffer(int numElements) {
-	  ByteBuffer bb = newByteBuffer(numElements * SIZEOF_INT);
-	  return bb.asIntBuffer();
-	}
-	public static IntBuffer newIntBuffer(int numElements, ByteOrder order) {
-	  ByteBuffer bb = newByteBuffer(numElements * SIZEOF_INT, order);
-	  return bb.asIntBuffer();
-	}
-	public static ByteBuffer newByteBuffer(int numElements) {
-	  ByteBuffer bb = ByteBuffer.allocateDirect(numElements);
-	  bb.order(ByteOrder.nativeOrder());
-	  return bb;
-	}
-	public static ByteBuffer newByteBuffer(int numElements, ByteOrder order) {
-	  ByteBuffer bb = ByteBuffer.allocateDirect(numElements);
-	  bb.order(order);
-	  return bb;
+			return res;
+		}
+
+		public static Int32 Strlen( Char[] in_renamed )
+		{
+			for ( var i = 0; i < in_renamed.Length; i++ )
+				if ( in_renamed[i] == 0 )
+					return i;
+			return in_renamed.Length;
+		}
+
+		public static Int32 Strlen( Byte[] in_renamed )
+		{
+			for ( var i = 0; i < in_renamed.Length; i++ )
+				if ( in_renamed[i] == 0 )
+					return i;
+			return in_renamed.Length;
+		}
+
+		public static String Hexdumpfile( ByteBuffer bb, Int32 len )
+		{
+			ByteBuffer bb1 = bb.Slice();
+			Byte[] buf = new Byte[len];
+			bb1.Get( buf );
+			return HexDump( buf, len, false );
+		}
+
+		public static Boolean EqualsIgnoreCase( this String text, String comparison )
+		{
+			return String.Equals( text, comparison, StringComparison.InvariantCultureIgnoreCase );
+		}
+
+		public static String HexDump( Byte[] data1, Int32 len, Boolean showAddress )
+		{
+			StringBuffer result = new StringBuffer();
+			StringBuffer charfield = new StringBuffer();
+			var i = 0;
+			while ( i < len )
+			{
+				if ( ( i & 0xf ) == 0 )
+				{
+					if ( showAddress )
+					{
+						var address = i.ToString( "X4" );
+						address = ( "0000".Substring( 0, 4 - address.Length ) + address ).ToUpper();
+						result.Append( address + ": " );
+					}
+				}
+
+				Int32 v = data1[i];
+				result.Append( Hex2( v ) );
+				result.Append( " " );
+				charfield.Append( ReadableChar( v ) );
+				i++;
+				if ( ( i & 0xf ) == 0 )
+				{
+					result.Append( charfield );
+					result.Append( "\\n" );
+					charfield.Length = 0;
+				}
+				else if ( ( i & 0xf ) == 8 )
+				{
+					result.Append( " " );
+				}
+			}
+
+			return result.ToString();
+		}
+
+		public static String Hex2( Int32 i )
+		{
+			var val = ( i & 0xff ).ToString( "X4" );
+			return ( "00".Substring( 0, 2 - val.Length ) + val ).ToUpper();
+		}
+
+		public static Char ReadableChar( Int32 i )
+		{
+			if ( ( i < 0x20 ) || ( i > 0x7f ) )
+				return '.';
+			else
+				return ( Char ) i;
+		}
+
+		public static void Printv( String in_renamed, Single[] arr )
+		{
+			for ( var n = 0; n < arr.Length; n++ )
+			{
+				Com.Println( in_renamed + "[" + n + "]: " + arr[n] );
+			}
+		}
+
+		static readonly Byte[] nullfiller = new Byte[8192];
+		public static void FwriteString( String s, Int32 len, FileStream f )
+		{
+			if ( s == null )
+				return;
+			var diff = len - s.Length;
+			if ( diff > 0 )
+			{
+				f.Write( StringToBytes( s ) );
+				f.Write( nullfiller, 0, diff );
+			}
+			else
+				f.Write( StringToBytes( s ), 0, len );
+		}
+
+		public static FileStream Fopen( String name, FileMode mode, FileAccess access )
+		{
+			try
+			{
+				return File.Open( name, mode, access );
+			}
+			catch ( Exception e )
+			{
+				Com.DPrintf( "Could not open file:" + name );
+				return null;
+			}
+		}
+
+		public static void Fclose( FileStream f )
+		{
+			try
+			{
+				f.Close();
+			}
+			catch ( Exception e )
+			{
+			}
+		}
+
+		public static String FreadString( FileStream f, Int32 len )
+		{
+			Byte[] buffer = new Byte[len];
+			FS.Read( buffer, len, f );
+			return Lib.CtoJava( buffer );
+		}
+
+		public static String RightFrom( String in_renamed, Char c )
+		{
+			var pos = in_renamed.LastIndexOf( c );
+			if ( pos == -1 )
+				return "";
+			else if ( pos < in_renamed.Length )
+				return in_renamed.Substring( pos + 1, in_renamed.Length );
+			return "";
+		}
+
+		public static String LeftFrom( String in_renamed, Char c )
+		{
+			var pos = in_renamed.LastIndexOf( c );
+			if ( pos == -1 )
+				return "";
+			else if ( pos < in_renamed.Length )
+				return in_renamed.Substring( 0, pos );
+			return "";
+		}
+
+		public static Int32 Rename( String oldn, String newn )
+		{
+			try
+			{
+				File.Copy( oldn, newn );
+				File.Delete( oldn );
+				return 0;
+			}
+			catch ( Exception e )
+			{
+				return 1;
+			}
+		}
+
+		public static Byte[] GetIntBytes( Int32 c )
+		{
+			Byte[] b = new Byte[4];
+			b[0] = ( Byte ) ( ( c & 0xff ) );
+			b[1] = ( Byte ) ( ( c >> 8 ) & 0xff );
+			b[2] = ( Byte ) ( ( c >> 16 ) & 0xff );
+			b[3] = ( Byte ) ( ( c >> 24 ) & 0xff );
+			return b;
+		}
+
+		public static Int32 GetInt( Byte[] b )
+		{
+			return ( b[0] & 0xff ) | ( ( b[1] & 0xff ) << 8 ) | ( ( b[2] & 0xff ) << 16 ) | ( ( b[3] & 0xff ) << 24 );
+		}
+
+		public static Single[] Clone( Single[] in_renamed )
+		{
+			Single[] out_renamed = new Single[in_renamed.Length];
+			if ( in_renamed.Length != 0 )
+				System.Array.Copy( in_renamed, 0, out_renamed, 0, in_renamed.Length );
+			return out_renamed;
+		}
+
+		public static Byte[] StringToBytes( String value )
+		{
+			return Encoding.ASCII.GetBytes( value );
+		}
+
+		public static String BytesToString( Byte[] value )
+		{
+			return Encoding.ASCII.GetString( value );
+		}
+
+		public static String CtoJava( String old )
+		{
+			var index = old.IndexOf( '\\' );
+			if ( index == 0 )
+				return "";
+			return ( index > 0 ) ? old.Substring( 0, index ) : old;
+		}
+
+		public static String CtoJava( Byte[] old )
+		{
+			return CtoJava( old, 0, old.Length );
+		}
+
+		public static String CtoJava( Byte[] old, Int32 offset, Int32 maxLenght )
+		{
+			if ( old.Length == 0 || old[0] == 0 )
+				return "";
+			Int32 i;
+			return Encoding.ASCII.GetString( old, offset, maxLenght );
+		}
+
+		public static readonly Int32 SIZEOF_FLOAT = 4;
+		public static readonly Int32 SIZEOF_INT = 4;
+		public static SingleBuffer NewSingleBuffer( Int32 numElements )
+		{
+			ByteBuffer bb = NewByteBuffer( numElements * SIZEOF_FLOAT );
+			return bb.AsSingleBuffer();
+		}
+
+		public static SingleBuffer NewSingleBuffer( Int32 numElements, ByteOrder order )
+		{
+			ByteBuffer bb = NewByteBuffer( numElements * SIZEOF_FLOAT, order );
+			return bb.AsSingleBuffer();
+		}
+
+		public static Int32Buffer NewInt32Buffer( Int32 numElements )
+		{
+			ByteBuffer bb = NewByteBuffer( numElements * SIZEOF_INT );
+			return bb.AsInt32Buffer();
+		}
+
+		public static Int32Buffer NewInt32Buffer( Int32 numElements, ByteOrder order )
+		{
+			ByteBuffer bb = NewByteBuffer( numElements * SIZEOF_INT, order );
+			return bb.AsInt32Buffer();
+		}
+
+		public static ByteBuffer NewByteBuffer( Int32 numElements )
+		{
+			ByteBuffer bb = ByteBuffer.Allocate( numElements );
+			bb.SetOrder( ByteOrder.NativeOrder );
+			return bb;
+		}
+
+		public static ByteBuffer NewByteBuffer( Int32 numElements, ByteOrder order )
+		{
+			ByteBuffer bb = ByteBuffer.Allocate( numElements );
+			bb.SetOrder( order );
+			return bb;
+		}
+
+		public static T CreateJaggedArray<T>( params Int32[] lengths )
+		{
+			return ( T ) InitializeJaggedArray( typeof( T ).GetElementType(), 0, lengths );
+		}
+
+		public static Object InitializeJaggedArray( Type type, Int32 index, Int32[] lengths )
+		{
+			Array array = Array.CreateInstance( type, lengths[index] );
+			Type elementType = type.GetElementType();
+
+			if ( elementType != null )
+			{
+				for ( var i = 0; i < lengths[index]; i++ )
+				{
+					array.SetValue(
+						InitializeJaggedArray( elementType, index + 1, lengths ), i );
+				}
+			}
+
+			return array;
+		}
+
+		public static void PrintStackTrace( this Exception e )
+		{
+			System.Console.WriteLine( e.ToString() );
+		}
+
+		public static Int32 GetBitDepth( this VideoMode v )
+		{
+			return v.RedBits + v.GreenBits + v.BlueBits;
+		}
+
+		public static Int32 Digit( Char value, Int32 radix )
+		{
+			if ( ( radix <= 0 ) || ( radix > 36 ) )
+				return -1; // Or throw exception
+
+			if ( radix <= 10 )
+				if ( value >= '0' && value < '0' + radix )
+					return value - '0';
+				else
+					return -1;
+			else if ( value >= '0' && value <= '9' )
+				return value - '0';
+			else if ( value >= 'a' && value < 'a' + radix - 10 )
+				return value - 'a' + 10;
+			else if ( value >= 'A' && value < 'A' + radix - 10 )
+				return value - 'A' + 10;
+
+			return -1;
+		}
+
+		public static void Fill<T>( this T[] array, T value )
+		{
+			for ( var i = 0; i < array.Length; i++ )
+				array[i] = value;
+		}
+
+		public static void Fill<T>( this T[] array, Int32 startIndex, Int32 count, T value )
+		{
+			for ( var i = startIndex; i < count; i++ )
+				array[i] = value;
+		}
+
 	}
 }

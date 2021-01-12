@@ -1,58 +1,36 @@
-/*
-Copyright (C) 1997-2001 Id Software, Inc.
+using Jake2.Qcommon;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
+namespace Jake2.Game
+{
+    public abstract class SuperAdapter
+    {
+        public SuperAdapter()
+        {
+            Register(this, GetID());
+        }
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+        private static void Register(SuperAdapter sa, string id)
+        {
+            adapters.Add(id, sa);
+        }
 
-See the GNU General Public License for more details.
+        private static Hashtable adapters = new Hashtable();
+        public static SuperAdapter GetFromID(string key)
+        {
+            SuperAdapter sa = (SuperAdapter)adapters[key];
+            if (sa == null)
+            {
+                Com.DPrintf("SuperAdapter.getFromID():adapter not found->" + key + "\\n");
+            }
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+            return sa;
+        }
 
-*/
-
-// Created on 09.01.2004 by RST.
-
-package jake2.game;
-
-import jake2.qcommon.Com;
-
-import java.util.Hashtable;
-
-public abstract class SuperAdapter {
-
-	/** Constructor, does the adapter registration. */
-	public SuperAdapter() {
-		register(this, getID());
-	}
-
-	/** Adapter registration. */
-	private static void register(SuperAdapter sa, String id) {
-		adapters.put(id, sa);
-	}
-
-	/** Adapter repository. */
-	private static Hashtable adapters= new Hashtable();
-
-	/** Returns the adapter from the repository given by its ID. */
-	public static SuperAdapter getFromID(String key) {
-		SuperAdapter sa= (SuperAdapter) adapters.get(key);
-
-		// try to create the adapter
-		if (sa == null) {
-			Com.DPrintf("SuperAdapter.getFromID():adapter not found->" + key + "\n");
-		}
-
-		return sa;
-	}
-
-	/** Returns the Adapter-ID. */
-	public abstract String getID();
+        public abstract string GetID();
+    }
 }

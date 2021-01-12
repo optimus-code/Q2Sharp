@@ -1,101 +1,78 @@
-/*
- * JSoundImpl.java
- * Copyright (C) 2004
- *
- * $Id: JSoundImpl.java,v 1.2 2005-12-04 17:26:55 cawe Exp $
- */
-package jake2.sound.jsound;
+using J2N.IO;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
-import java.nio.ByteBuffer;
+namespace Jake2.Sound.Jsound
+{
+    public class JSoundImpl : ISound
+    {
+        static JSoundImpl()
+        {
+            S.Register(new JSoundImpl());
+        }
 
-import jake2.sound.*;
+        public virtual bool Init()
+        {
+            SND_DMA.Init();
+            if (SND_DMA.sound_started)
+                return true;
+            return false;
+        }
 
-/**
- * JSoundImpl
- */
-public class JSoundImpl  implements Sound {
-	
-	static {
-		S.register(new JSoundImpl());
-	};
+        public virtual void Shutdown()
+        {
+            SND_DMA.Shutdown();
+        }
 
-	public boolean Init() {
-		SND_DMA.Init();
-		if (SND_DMA.sound_started) return true;
-		return false;
-	}
+        public virtual void StartSound(float[] origin, int entnum, int entchannel, sfx_t sfx, float fvol, float attenuation, float timeofs)
+        {
+            SND_DMA.StartSound(origin, entnum, entchannel, sfx, fvol, attenuation, timeofs);
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.sound.SoundImpl#Shutdown()
-	 */
-	public void Shutdown() {
-		SND_DMA.Shutdown();
-	}
+        public virtual void StopAllSounds()
+        {
+            SND_DMA.StopAllSounds();
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.sound.SoundImpl#StartSound(float[], int, int, jake2.sound.sfx_t, float, float, float)
-	 */
-	public void StartSound(float[] origin, int entnum, int entchannel, sfx_t sfx, float fvol, float attenuation, float timeofs) {
-		SND_DMA.StartSound(origin, entnum, entchannel, sfx, fvol, attenuation, timeofs);
-	}
+        public virtual void Update(float[] origin, float[] forward, float[] right, float[] up)
+        {
+            SND_DMA.Update(origin, forward, right, up);
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.sound.SoundImpl#StopAllSounds()
-	 */
-	public void StopAllSounds() {
-		SND_DMA.StopAllSounds();
-	}
+        public virtual string GetName()
+        {
+            return "jsound";
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.sound.SoundImpl#Update(float[], float[], float[], float[])
-	 */
-	public void Update(float[] origin, float[] forward, float[] right, float[] up) {
-		SND_DMA.Update(origin, forward, right, up);
-	}
+        public virtual void BeginRegistration()
+        {
+            SND_DMA.BeginRegistration();
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.sound.Sound#getName()
-	 */
-	public String getName() {
-		return "jsound";
-	}
+        public virtual sfx_t RegisterSound(string sample)
+        {
+            return SND_DMA.RegisterSound(sample);
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.sound.Sound#BeginRegistration()
-	 */
-	public void BeginRegistration() {
-		SND_DMA.BeginRegistration();
-	}
+        public virtual void EndRegistration()
+        {
+            SND_DMA.EndRegistration();
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.sound.Sound#RegisterSound(java.lang.String)
-	 */
-	public sfx_t RegisterSound(String sample) {
-		return SND_DMA.RegisterSound(sample);
-	}
+        public virtual void StartLocalSound(string sound)
+        {
+            SND_DMA.StartLocalSound(sound);
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.sound.Sound#EndRegistration()
-	 */
-	public void EndRegistration() {
-		SND_DMA.EndRegistration();
-	}
+        public virtual void RawSamples(int samples, int rate, int width, int channels, ByteBuffer data)
+        {
+            SND_DMA.RawSamples(samples, rate, width, channels, data);
+        }
 
-	/* (non-Javadoc)
-	 * @see jake2.sound.Sound#StartLocalSound(java.lang.String)
-	 */
-	public void StartLocalSound(String sound) {
-		SND_DMA.StartLocalSound(sound);
-	}
-
-	/* (non-Javadoc)
-	 * @see jake2.sound.Sound#RawSamples(int, int, int, int, byte[])
-	 */
-	public void RawSamples(int samples, int rate, int width, int channels, ByteBuffer data) {
-		SND_DMA.RawSamples(samples, rate, width, channels, data);
-	}
-    
-    public void disableStreaming() {
+        public virtual void DisableStreaming()
+        {
+        }
     }
-
 }

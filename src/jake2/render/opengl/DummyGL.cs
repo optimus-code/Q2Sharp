@@ -1,318 +1,310 @@
-package jake2.render.opengl;
+using J2N.IO;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
+namespace Jake2.Render.Opengl
+{
+    public class DummyGL : IQGL
+    {
+        private static IQGL self = new DummyGL();
+        private DummyGL()
+        {
+        }
 
-import java.nio.*;
+        public static IQGL GetInstance()
+        {
+            return self;
+        }
 
-public class DummyGL implements QGL {
-    
-    private static QGL self = new DummyGL();
-    
-    private DummyGL() {
-        // singleton
-    }
-    
-    public static QGL getInstance() {
-        return self;
-    }
-    
-    public void glAlphaFunc(int func, float ref) {
-        // do nothing
-    }
+        public virtual void GlAlphaFunc(int func, float ref_renamed)
+        {
+        }
 
-    public void glBegin(int mode) {
-        // do nothing
-    }
+        public virtual void GlBegin(int mode)
+        {
+        }
 
-    public void glBindTexture(int target, int texture) {
-        // do nothing
-    }
+        public virtual void GlBindTexture(int target, int texture)
+        {
+        }
 
-    public void glBlendFunc(int sfactor, int dfactor) {
-        // do nothing
-    }
+        public virtual void GlBlendFunc(int sfactor, int dfactor)
+        {
+        }
 
-    public void glClear(int mask) {
-        // do nothing
-    }
+        public virtual void GlClear(int mask)
+        {
+        }
 
-    public void glClearColor(float red, float green, float blue, float alpha) {
-        // do nothing
-    }
+        public virtual void GlClearColor(float red, float green, float blue, float alpha)
+        {
+        }
 
-    public void glColor3f(float red, float green, float blue) {
-        // do nothing
-    }
+        public virtual void GlColor3f(float red, float green, float blue)
+        {
+        }
 
-    public void glColor3ub(byte red, byte green, byte blue) {
-        // do nothing
-    }
+        public virtual void GlColor3ub(byte red, byte green, byte blue)
+        {
+        }
 
-    public void glColor4f(float red, float green, float blue, float alpha) {
-        // do nothing
-    }
+        public virtual void GlColor4f(float red, float green, float blue, float alpha)
+        {
+        }
 
-    public void glColor4ub(byte red, byte green, byte blue, byte alpha) {
-        // do nothing
-    }
+        public virtual void GlColor4ub(byte red, byte green, byte blue, byte alpha)
+        {
+        }
 
-    public void glColorPointer(int size, boolean unsigned, int stride,
-            ByteBuffer pointer) {
-        // do nothing
-    }
-    
-    public void glColorPointer(int size, int stride, FloatBuffer pointer) {
-        // do nothing
-    }
+        public virtual void GlColorPointer(int size, bool unsigned, int stride, ByteBuffer pointer)
+        {
+        }
 
-    public void glCullFace(int mode) {
-        // do nothing
-    }
+        public virtual void GlColorPointer(int size, int stride, SingleBuffer pointer)
+        {
+        }
 
-    public void glDeleteTextures(IntBuffer textures) {
-        // do nothing
-    }
+        public virtual void GlCullFace(int mode)
+        {
+        }
 
-    public void glDepthFunc(int func) {
-        // do nothing
-    }
+        public virtual void GlDeleteTextures(Int32Buffer textures)
+        {
+        }
 
-    public void glDepthMask(boolean flag) {
-        // do nothing
-    }
+        public virtual void GlDepthFunc(int func)
+        {
+        }
 
-    public void glDepthRange(double zNear, double zFar) {
-        // do nothing
-    }
+        public virtual void GlDepthMask(bool flag)
+        {
+        }
 
-    public void glDisable(int cap) {
-        // do nothing
-    }
+        public virtual void GlDepthRange(double zNear, double zFar)
+        {
+        }
 
-    public void glDisableClientState(int cap) {
-        // do nothing
-    }
+        public virtual void GlDisable(int cap)
+        {
+        }
 
-    public void glDrawArrays(int mode, int first, int count) {
-        // do nothing
-    }
+        public virtual void GlDisableClientState(int cap)
+        {
+        }
 
-    public void glDrawBuffer(int mode) {
-        // do nothing
-    }
+        public virtual void GlDrawArrays(int mode, int first, int count)
+        {
+        }
 
-    public void glDrawElements(int mode, IntBuffer indices) {
-        // do nothing
-    }
+        public virtual void GlDrawBuffer(int mode)
+        {
+        }
 
-    public void glEnable(int cap) {
-        // do nothing
-    }
+        public virtual void GlDrawElements(int mode, Int32Buffer indices)
+        {
+        }
 
-    public void glEnableClientState(int cap) {
-        // do nothing
-    }
+        public virtual void GlEnable(int cap)
+        {
+        }
 
-    public void glEnd() {
-        // do nothing
-    }
+        public virtual void GlEnableClientState(int cap)
+        {
+        }
 
-    public void glFinish() {
-        // do nothing
-    }
+        public virtual void GlEnd()
+        {
+        }
 
-    public void glFlush() {
-        // do nothing
-    }
+        public virtual void GlFinish()
+        {
+        }
 
-    public void glFrustum(double left, double right, double bottom,
-            double top, double zNear, double zFar) {
-        // do nothing
-    }
+        public virtual void GlFlush()
+        {
+        }
 
-    public int glGetError() {
-        return GL_NO_ERROR;
-    }
+        public virtual void GlFrustum(double left, double right, double bottom, double top, double zNear, double zFar)
+        {
+        }
 
-    public void glGetFloat(int pname, FloatBuffer params) {
-        // do nothing
-    }
+        public virtual int GlGetError()
+        {
+            return GL_NO_ERROR;
+        }
 
-    public String glGetString(int name) {
-        switch (name) {
-        case GL_EXTENSIONS:
-            return "GL_ARB_multitexture";
-        default:
-            return "";
+        public virtual void GlGetFloat(int pname, SingleBuffer params_renamed)
+        {
+        }
+
+        public virtual string GlGetString(int name)
+        {
+            switch (name)
+
+            {
+                case GL_EXTENSIONS:
+                    return "GL_ARB_multitexture";
+                default:
+                    return "";
+            }
+        }
+
+        public virtual void GlHint(int target, int mode)
+        {
+        }
+
+        public virtual void GlInterleavedArrays(int format, int stride, SingleBuffer pointer)
+        {
+        }
+
+        public virtual void GlLoadIdentity()
+        {
+        }
+
+        public virtual void GlLoadMatrix(SingleBuffer m)
+        {
+        }
+
+        public virtual void GlMatrixMode(int mode)
+        {
+        }
+
+        public virtual void GlOrtho(double left, double right, double bottom, double top, double zNear, double zFar)
+        {
+        }
+
+        public virtual void GlPixelStorei(int pname, int param)
+        {
+        }
+
+        public virtual void GlPointSize(float size)
+        {
+        }
+
+        public virtual void GlPolygonMode(int face, int mode)
+        {
+        }
+
+        public virtual void GlPopMatrix()
+        {
+        }
+
+        public virtual void GlPushMatrix()
+        {
+        }
+
+        public virtual void GlReadPixels(int x, int y, int width, int height, int format, int type, ByteBuffer pixels)
+        {
+        }
+
+        public virtual void GlRotatef(float angle, float x, float y, float z)
+        {
+        }
+
+        public virtual void GlScalef(float x, float y, float z)
+        {
+        }
+
+        public virtual void GlScissor(int x, int y, int width, int height)
+        {
+        }
+
+        public virtual void GlShadeModel(int mode)
+        {
+        }
+
+        public virtual void GlTexCoord2f(float s, float t)
+        {
+        }
+
+        public virtual void GlTexCoordPointer(int size, int stride, SingleBuffer pointer)
+        {
+        }
+
+        public virtual void GlTexEnvi(int target, int pname, int param)
+        {
+        }
+
+        public virtual void GlTexImage2D(int target, int level, int internalformat, int width, int height, int border, int format, int type, ByteBuffer pixels)
+        {
+        }
+
+        public virtual void GlTexImage2D(int target, int level, int internalformat, int width, int height, int border, int format, int type, Int32Buffer pixels)
+        {
+        }
+
+        public virtual void GlTexParameterf(int target, int pname, float param)
+        {
+        }
+
+        public virtual void GlTexParameteri(int target, int pname, int param)
+        {
+        }
+
+        public virtual void GlTexSubImage2D(int target, int level, int xoffset, int yoffset, int width, int height, int format, int type, Int32Buffer pixels)
+        {
+        }
+
+        public virtual void GlTranslatef(float x, float y, float z)
+        {
+        }
+
+        public virtual void GlVertex2f(float x, float y)
+        {
+        }
+
+        public virtual void GlVertex3f(float x, float y, float z)
+        {
+        }
+
+        public virtual void GlVertexPointer(int size, int stride, SingleBuffer pointer)
+        {
+        }
+
+        public virtual void GlViewport(int x, int y, int width, int height)
+        {
+        }
+
+        public virtual void GlColorTable(int target, int internalFormat, int width, int format, int type, ByteBuffer data)
+        {
+        }
+
+        public virtual void GlActiveTextureARB(int texture)
+        {
+        }
+
+        public virtual void GlClientActiveTextureARB(int texture)
+        {
+        }
+
+        public virtual void GlPointParameterEXT(int pname, SingleBuffer pfParams)
+        {
+        }
+
+        public virtual void GlPointParameterfEXT(int pname, float param)
+        {
+        }
+
+        public virtual void GlLockArraysEXT(int first, int count)
+        {
+        }
+
+        public virtual void GlArrayElement(int index)
+        {
+        }
+
+        public virtual void GlUnlockArraysEXT()
+        {
+        }
+
+        public virtual void GlMultiTexCoord2f(int target, float s, float t)
+        {
+        }
+
+        public virtual void SetSwapInterval(int interval)
+        {
         }
     }
-    
-    public void glHint(int target, int mode) {
-        // do nothing
-    }
-
-    public void glInterleavedArrays(int format, int stride,
-            FloatBuffer pointer) {
-        // do nothing
-    }
-
-    public void glLoadIdentity() {
-        // do nothing
-    }
-
-    public void glLoadMatrix(FloatBuffer m) {
-        // do nothing
-    }
-
-    public void glMatrixMode(int mode) {
-        // do nothing
-    }
-
-    public void glOrtho(double left, double right, double bottom,
-            double top, double zNear, double zFar) {
-        // do nothing
-    }
-
-    public void glPixelStorei(int pname, int param) {
-        // do nothing
-    }
-
-    public void glPointSize(float size) {
-        // do nothing
-    }
-
-    public void glPolygonMode(int face, int mode) {
-        // do nothing
-    }
-
-    public void glPopMatrix() {
-        // do nothing
-    }
-
-    public void glPushMatrix() {
-        // do nothing
-    }
-
-    public void glReadPixels(int x, int y, int width, int height,
-            int format, int type, ByteBuffer pixels) {
-        // do nothing
-    }
-
-    public void glRotatef(float angle, float x, float y, float z) {
-        // do nothing
-    }
-
-    public void glScalef(float x, float y, float z) {
-        // do nothing
-    }
-
-    public void glScissor(int x, int y, int width, int height) {
-        // do nothing
-    }
-
-    public void glShadeModel(int mode) {
-        // do nothing
-    }
-
-    public void glTexCoord2f(float s, float t) {
-        // do nothing
-    }
-
-    public void glTexCoordPointer(int size, int stride, FloatBuffer pointer) {
-        // do nothing
-    }
-
-    public void glTexEnvi(int target, int pname, int param) {
-        // do nothing
-    }
-
-    public void glTexImage2D(int target, int level, int internalformat,
-            int width, int height, int border, int format, int type,
-            ByteBuffer pixels) {
-        // do nothing
-    }
-
-    public void glTexImage2D(int target, int level, int internalformat,
-            int width, int height, int border, int format, int type,
-            IntBuffer pixels) {
-        // do nothing
-    }
-
-    public void glTexParameterf(int target, int pname, float param) {
-        // do nothing
-    }
-
-    public void glTexParameteri(int target, int pname, int param) {
-        // do nothing
-    }
-
-    public void glTexSubImage2D(int target, int level, int xoffset,
-            int yoffset, int width, int height, int format, int type,
-            IntBuffer pixels) {
-        // do nothing
-    }
-
-    public void glTranslatef(float x, float y, float z) {
-        // do nothing
-    }
-
-    public void glVertex2f(float x, float y) {
-        // do nothing
-    }
-
-    public void glVertex3f(float x, float y, float z) {
-        // do nothing
-    }
-
-    public void glVertexPointer(int size, int stride, FloatBuffer pointer) {
-        // do nothing
-    }
-
-    public void glViewport(int x, int y, int width, int height) {
-        // do nothing
-    }
-
-    public void glColorTable(int target, int internalFormat, int width,
-            int format, int type, ByteBuffer data) {
-        // do nothing
-    }
-
-    public void glActiveTextureARB(int texture) {
-        // do nothing
-    }
-
-    public void glClientActiveTextureARB(int texture) {
-        // do nothing
-    }
-
-    public void glPointParameterEXT(int pname, FloatBuffer pfParams) {
-        // do nothing
-    }
-
-    public void glPointParameterfEXT(int pname, float param) {
-        // do nothing
-    }
-
-    public void glLockArraysEXT(int first, int count) {
-        // do nothing
-    }
-
-    public void glArrayElement(int index) {
-        // do nothing
-    }
-
-    public void glUnlockArraysEXT() {
-        // do nothing
-    }
-
-    public void glMultiTexCoord2f(int target, float s, float t) {
-        // do nothing
-    }
-
-    /*
-     * util extensions
-     */
-    public void setSwapInterval(int interval) {
-        // do nothing
-    }
-
 }
