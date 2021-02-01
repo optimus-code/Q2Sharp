@@ -6,6 +6,7 @@ using System.Data;
 using System.Drawing;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace Q2Sharp.win
@@ -93,10 +94,7 @@ namespace Q2Sharp.win
 				ShowNotFoundPanel();
 				try
 				{
-					lock ( this )
-					{
-						Wait();
-					}
+					Monitor.Wait(this);
 				}
 				catch ( Exception e )
 				{

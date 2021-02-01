@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -694,11 +695,22 @@ namespace Q2Sharp.Render.Basic
 
         public virtual void GL_ResampleTexture(int[] in_renamed, int inwidth, int inheight, int[] out_renamed, int outwidth, int outheight)
         {
-            BufferedImage image = new BufferedImage(inwidth, inheight, BufferedImage.TYPE_INT_ARGB);
-            image.SetRGB(0, 0, inwidth, inheight, in_renamed, 0, inwidth);
-            AffineTransformOp op = new AffineTransformOp(AffineTransform.GetScaleInstance(outwidth * 1 / inwidth, outheight * 1 / inheight), AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-            BufferedImage tmp = op.Filter(image, null);
-            tmp.GetRGB(0, 0, outwidth, outheight, out_renamed, 0, outwidth);
+            Bitmap image = new Bitmap(inwidth, inheight, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            
+            for (int y = 0; y < inheight; y++)
+            for (int x = 0; x < inwidth; x++)
+                image.SetPixel(x, y, Color.FromArgb(in_renamed[y * inwidth + x]));
+            
+            Bitmap tmp = new Bitmap(outwidth, outheight, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            
+            using (Graphics graphics = Graphics.FromImage(tmp)){
+                graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
+                graphics.DrawImage(image, new Rectangle(0, 0, inwidth, inheight), new Rectangle(0, 0, outwidth, outheight), GraphicsUnit.Pixel);
+            }
+            
+            for (int y = 0; y < outheight; y++)
+            for (int x = 0; x < outwidth; x++)
+                out_renamed[y * outwidth + x] = tmp.GetPixel(x, y).ToArgb();
         }
 
         public virtual void GL_LightScaleTexture(int[] in_renamed, int inwidth, int inheight, bool only_gamma)

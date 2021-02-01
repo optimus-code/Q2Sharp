@@ -54,7 +54,9 @@ namespace Q2Sharp.Sound.Jsound
                 running = true;
                 while (running)
                 {
-                    line.Write(b, pos, 512);
+                    var chunk = new byte[(b.Length - pos) % 512];
+                    Array.Copy(b, 0, chunk, 0, chunk.Length);
+                    audioBuffer.BufferData(chunk, format);
                     pos = (pos + 512) % b.Length;
                 }
             }

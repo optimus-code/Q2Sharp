@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using OpenTK.Graphics.OpenGL;
 
 namespace Q2Sharp.Render.Opengl
 {
@@ -132,7 +133,7 @@ namespace Q2Sharp.Render.Opengl
 
         public virtual int GlGetError()
         {
-            return GL_NO_ERROR;
+            return (int) ErrorCode.NoError;
         }
 
         public virtual void GlGetFloat(int pname, SingleBuffer params_renamed)
@@ -144,7 +145,7 @@ namespace Q2Sharp.Render.Opengl
             switch (name)
 
             {
-                case GL_EXTENSIONS:
+                case (int) StringName.Extensions:
                     return "GL_ARB_multitexture";
                 default:
                     return "";

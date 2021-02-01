@@ -1006,7 +1006,7 @@ namespace Q2Sharp.Render.Fast
 			Draw_InitLocal();
 			ErrorCode err = GL.GetError();
 			if ( err != ErrorCode.NoError )
-				VID.Printf( Defines.PRINT_ALL, "GL.GetError() = 0x%x\\n\\t%s\\n", err, "" + GL.GetString( err ) );
+				VID.Printf( Defines.PRINT_ALL, "GL.GetError() = 0x%x\\n\\t%s\\n", err, "" + Enum.GetName( typeof(ErrorCode), err ) );
 			glImpl.EndFrame();
 			return true;
 		}

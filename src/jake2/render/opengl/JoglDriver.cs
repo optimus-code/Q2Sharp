@@ -12,12 +12,17 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using OpenTK.Mathematics;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.Common.Input;
+using Image = OpenTK.Windowing.Common.Input.Image;
+using Monitor = OpenTK.Windowing.GraphicsLibraryFramework.Monitor;
 
 namespace Q2Sharp.Render.Opengl
 {
     public abstract class JoglDriver : IGLDriver
     {
-        private VideoMode oldDisplayMode;
+        private VideoMode? oldDisplayMode;
         GameWindow window;
         int window_xpos, window_ypos;
         protected bool post_init = false;
@@ -61,13 +66,13 @@ namespace Q2Sharp.Render.Opengl
             }
 
             LinkedList<VideoMode> l = new LinkedList<VideoMode>();
-            l.AddLast(oldDisplayMode);
+            l.AddLast(oldDisplayMode.Value);
             for (int i = 0; i < modes.Length; i++)
             {
                 VideoMode m = modes[i];
-                if (m.RedBits + m.GreenBits + m.BlueBits != oldDisplayMode.RedBits + oldDisplayMode.GreenBits + oldDisplayMode.BlueBits)
+                if (m.RedBits + m.GreenBits + m.BlueBits != oldDisplayMode.Value.RedBits + oldDisplayMode.Value.GreenBits + oldDisplayMode.Value.BlueBits)
                     continue;
-                if (m.RefreshRate > oldDisplayMode.RefreshRate )
+                if (m.RefreshRate > oldDisplayMode.Value.RefreshRate )
                     continue;
                 if (m.Width < 240 || m.Width < 320)
                     continue;
@@ -88,12 +93,12 @@ namespace Q2Sharp.Render.Opengl
                 }
                 else if (ml.Width > m.Width || ml.Height > m.Height)
                 {
-                    l.AddBefore(j, m);
+                    l.AddBefore(l.Find(ml), m);
                 }
                 else if (m.RefreshRate > ml.RefreshRate)
                 {
-                    l.Remove(j);
-                    l.Add(j, m);
+                    l.AddBefore(l.Find(ml), m);
+                    l.Remove(l.Find(ml));
                 }
             }
 
@@ -104,7 +109,7 @@ namespace Q2Sharp.Render.Opengl
 
         public virtual VideoMode FindDisplayMode(Size dim)
         {
-            VideoMode mode = default;
+            VideoMode? mode = null;
             VideoMode m = default;
             VideoMode[] modes = GetModeList();
             int w = dim.Width;
@@ -121,7 +126,7 @@ namespace Q2Sharp.Render.Opengl
 
             if (mode == null)
                 mode = oldDisplayMode;
-            return mode;
+            return mode.Value;
         }
 
         public virtual string GetModeString(VideoMode m)
@@ -142,11 +147,13 @@ namespace Q2Sharp.Render.Opengl
         {
             VID.Printf(Defines.PRINT_ALL, "Initializing OpenGL display\\n");
             VID.Printf(Defines.PRINT_ALL, "...setting mode " + mode + ":");
-            GraphicsEnvironment env = GraphicsEnvironment.GetLocalGraphicsEnvironment();
-            device = env.GetDefaultScreenDevice();
-            if (oldDisplayMode == null)
-            {
-                oldDisplayMode = device.GetDisplayMode();
+
+            unsafe {
+                Monitor* device = GLFW.GetPrimaryMonitor();
+                if (oldDisplayMode == null)
+                {
+                    oldDisplayMode = GLFW.GetVideoMode(device)[0];
+                }
             }
 
             if (!VID.GetModeInfo(out var newDim, mode))
@@ -176,8 +183,19 @@ namespace Q2Sharp.Render.Opengl
             window.RenderFrame += ( t ) => Program.Frame();
             Program.RunWindow += ( ) => window.Run();
 
-            ImageIcon icon = new ImageIcon(GetType().GetResource("/icon-small.png"));
-            window.SetIconImage(icon.GetImage());
+            //ImageIcon icon = new ImageIcon(GetType().GetResource("/icon-small.png"));
+            Bitmap bitmap = (Bitmap) Bitmap.FromStream(GetType().Assembly.GetManifestResourceStream("/icon-small.png"));
+            byte[] pixels = new byte[bitmap.Width * bitmap.Height];
+
+            for (int y = 0; y < bitmap.Height; y++)
+            for (int x = 0; x < bitmap.Width; x++)
+            {
+                var color = bitmap.GetPixel(x, y);
+                Array.Copy(new byte[] { color.R, color.G, color.B, color.A }, 0, pixels, (y * bitmap.Width + x) * 4, 4);
+            }
+            
+            Image icon = new Image(bitmap.Width, bitmap.Height, pixels);
+            window.Icon = new WindowIcon(icon);
 
             window.Minimized += ( e ) => JOGLKBD.listener.ComponentHidden( e );
             window.Maximized += ( e ) =>
@@ -205,9 +223,14 @@ namespace Q2Sharp.Render.Opengl
                 VideoMode VideoMode = FindDisplayMode(newDim);
                 newDim.Width = VideoMode.Width;
                 newDim.Height = VideoMode.Height;
-                device.SetFullScreenWindow(window);
-                if (device.IsFullScreenSupported())
-                    device.SetDisplayMode(VideoMode);
+                window.WindowState = WindowState.Fullscreen;
+                if (window.IsFullscreen)
+                {
+                    unsafe
+                    {
+                        GLFW.SetWindowSize(window.WindowPtr, VideoMode.Width, VideoMode.Height);
+                    }
+                }
                 window.Location = new OpenTK.Mathematics.Vector2i();
                 window.Size = new OpenTK.Mathematics.Vector2i(VideoMode.Width, VideoMode.Height);
                 VID.Printf(Defines.PRINT_ALL, "...setting fullscreen " + GetModeString(VideoMode) + '\\');
@@ -227,13 +250,18 @@ namespace Q2Sharp.Render.Opengl
 
         public virtual void Shutdown()
         {
-            if (oldDisplayMode != null && device.GetFullScreenWindow() != null)
+            if (oldDisplayMode != null)
             {
                 try
                 {
-                    if (device.IsFullScreenSupported())
-                        device.SetDisplayMode(oldDisplayMode);
-                    device.SetFullScreenWindow(null);
+                    if (window.IsFullscreen)
+                    {
+                        unsafe
+                        {
+                            GLFW.SetWindowSize(window.WindowPtr, oldDisplayMode.Value.Width, oldDisplayMode.Value.Height);
+                        }
+                    }
+                    window.WindowState = WindowState.Normal;
                 }
                 catch (Exception e)
                 {

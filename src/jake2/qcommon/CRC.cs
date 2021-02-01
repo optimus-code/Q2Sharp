@@ -15,14 +15,5 @@ namespace Q2Sharp.Qcommon
 				crc = ( Int16 ) ( ( crc << 8 ) ^ crctable[0xff & ( ( crc >> 8 ) ^ start[ndx++] )] );
 			return crc & 0xFFFF;
 		}
-
-		public static void Main( String[] args )
-		{
-			Byte[] data = new[] { ( Byte ) 0x71, ( Byte ) 0xa9, ( Byte ) 0x05, ( Byte ) 0xce, ( Byte ) 0x8d, ( Byte ) 0x75, ( Byte ) 0x28, ( Byte ) 0xc8, ( Byte ) 0xba, ( Byte ) 0x97, ( Byte ) 0x45, ( Byte ) 0xe9, ( Byte ) 0x8a, ( Byte ) 0xe0, ( Byte ) 0x37, ( Byte ) 0xbd, ( Byte ) 0x6c, ( Byte ) 0x6d, ( Byte ) 0x67, ( Byte ) 0x4a, ( Byte ) 0x21 };
-			System.Diagnostics.Debug.WriteLine( "crc:" + ( CRC_Block( data, 21 ) & 0xffff ) );
-			System.Diagnostics.Debug.WriteLine( "----" );
-			for ( var n = 0; n < 5; n++ )
-				System.Diagnostics.Debug.WriteLine( "seq:" + ( Com.BlockSequenceCRCByte( data, 0, 21, n * 10 ) & 0xff ) );
-		}
 	}
 }
