@@ -4,6 +4,7 @@ using Q2Sharp.Game;
 using Q2Sharp.Qcommon;
 using Q2Sharp.Util;
 using System;
+using System.Collections;
 using System.Text;
 using static Q2Sharp.Qcommon.qfiles;
 
@@ -862,7 +863,7 @@ namespace Q2Sharp.Render.Fast
 		{
 			model.textureCoordBuf = globalModelTextureCoordBuf.Slice();
 			model.vertexIndexBuf = globalModelVertexIndexBuf.Slice();
-			Vector tmp = new Vector();
+			ArrayList tmp = new ArrayList();
 			var count = 0;
 			Int32[] order = model.glCmds;
 			var orderIndex = 0;
@@ -871,7 +872,7 @@ namespace Q2Sharp.Render.Fast
 				count = order[orderIndex++];
 				if ( count == 0 )
 					break;
-				tmp.AddElement( count );
+				tmp.Add( count );
 				if ( count < 0 )
 				{
 					count = -count;
@@ -890,14 +891,14 @@ namespace Q2Sharp.Render.Fast
 				while ( --count != 0 );
 			}
 
-			Int32 size = tmp.Size();
+			Int32 size = tmp.Count;
 			model.counts = new Int32[size];
 			model.indexElements = new Int32Buffer[size];
 			count = 0;
 			var pos = 0;
 			for ( var i = 0; i < model.counts.Length; i++ )
 			{
-				count = ( ( Int32 ) tmp.Get( i ) ).IntValue();
+				count = ( ( Int32 ) tmp[i] );
 				model.counts[i] = count;
 				count = ( count < 0 ) ? -count : count;
 				model.vertexIndexBuf.Position = pos;

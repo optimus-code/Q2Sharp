@@ -70,10 +70,9 @@ namespace Q2Sharp.Render.Basic
             try
             {
                 FileStream out_renamed = File.OpenWrite( file.FullName );
-                FileChannel ch = out_renamed.GetChannel();
                 int fileLength = TGA_HEADER_SIZE + vid.GetWidth() * vid.GetHeight() * 3;
                 out_renamed.SetLength(fileLength);
-                MappedByteBuffer image = ch.Map(FileChannel.MapMode.READ_WRITE, 0, fileLength);
+                ByteBuffer image = ByteBuffer.Allocate( (int)file.Length );
                 image.Put(0, (byte)0).Put(1, (byte)0);
                 image.Put(2, (byte)2);
                 image.Put(12, (byte)(vid.GetWidth() & 0xFF));
@@ -81,7 +80,7 @@ namespace Q2Sharp.Render.Basic
                 image.Put(14, (byte)(vid.GetHeight() & 0xFF));
                 image.Put(15, (byte)(vid.GetHeight() >> 8));
                 image.Put(16, (byte)24);
-                image.Position(TGA_HEADER_SIZE);
+                image.Position = TGA_HEADER_SIZE;
                 ByteBuffer rgb = image.Slice();
                 if (vid.GetWidth() % 4 != 0)
                 {
@@ -111,7 +110,8 @@ namespace Q2Sharp.Render.Basic
                 }
 
                 GL.PixelStore(PixelStoreParameter.PackAlignment, 4);
-                ch.Close();
+                out_renamed.Write( image.Array, 0, image.Array.Length );
+                out_renamed.Dispose();
             }
             catch (IOException e)
             {

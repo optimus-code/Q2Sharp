@@ -268,8 +268,7 @@ namespace Q2Sharp.Qcommon
 			pack_t pak;
 			FileInfo file = null;
 			var fileLength = 0;
-			FileChannel channel = null;
-			FileInputStream input = null;
+			FileStream input = null;
 			ByteBuffer buffer = null;
 			file_from_pak = 0;
 			try
@@ -282,10 +281,11 @@ namespace Q2Sharp.Qcommon
 						file = new FileInfo( netpath );
 						if ( file.Attributes == FileAttributes.ReadOnly || file.Attributes == FileAttributes.Normal )
 						{
-							input = new FileInputStream( file );
-							channel = input.GetChannel();
-							fileLength = ( Int32 ) channel.Size();
-							buffer = channel.Map( FileChannel.MapMode.READ_ONLY, 0, fileLength );
+							input = File.OpenRead( file.FullName );
+							fileLength = ( Int32 ) file.Length;
+							var b = new Byte[fileLength];
+							input.Read( b, 0, fileLength );
+							buffer = ByteBuffer.Wrap( b );
 							input.Close();
 							return buffer;
 						}
@@ -314,9 +314,10 @@ namespace Q2Sharp.Qcommon
 
 							if ( pak.backbuffer == null )
 							{
-								channel = pak.handle.GetChannel();
-								pak.backbuffer = channel.Map( FileChannel.MapMode.READ_ONLY, 0, pak.handle.Length );
-								channel.Close();
+								var pb = new Byte[pak.handle.Length];
+								pak.handle.Read( pb, 0, ( Int32 ) pak.handle.Length );
+								pak.backbuffer = ByteBuffer.Wrap( pb );
+								pak.handle.Dispose();
 							}
 
 							pak.backbuffer.Position = entry.filepos;
@@ -331,10 +332,12 @@ namespace Q2Sharp.Qcommon
 						file = new FileInfo( netpath );
 						if ( file.Attributes != FileAttributes.ReadOnly && file.Attributes != FileAttributes.Normal )
 							continue;
-						input = new FileInputStream( file );
-						channel = input.GetChannel();
-						fileLength = ( Int32 ) channel.Size();
-						buffer = channel.Map( FileChannel.MapMode.READ_ONLY, 0, fileLength );
+
+						input = File.OpenRead( file.FullName );
+						fileLength = ( Int32 ) file.Length;
+						var b = new Byte[fileLength];
+						input.Read( b, 0, fileLength );
+						buffer = ByteBuffer.Wrap( b );
 						input.Close();
 						return buffer;
 					}
@@ -347,9 +350,7 @@ namespace Q2Sharp.Qcommon
 			try
 			{
 				if ( input != null )
-					input.Close();
-				else if ( channel != null && channel.IsOpen() )
-					channel.Close();
+					input.Dispose();
 			}
 			catch ( IOException ioe )
 			{
@@ -383,10 +384,12 @@ namespace Q2Sharp.Qcommon
 			try
 			{
 				file = File.OpenRead( packfile );
-				FileChannel fc = file.GetChannel();
-				ByteBuffer packhandle = fc.Map( FileChannel.MapMode.READ_ONLY, 0, file.Length );
+
+				var pb = new Byte[file.Length];
+				file.Read( pb, 0, ( Int32 ) file.Length );
+				ByteBuffer packhandle = ByteBuffer.Wrap( pb );
 				packhandle.Order = ByteOrder.LittleEndian;
-				fc.Close();
+				file.Close();
 				if ( packhandle == null || packhandle.Limit < 1 )
 					return null;
 				header = new dpackheader_t();

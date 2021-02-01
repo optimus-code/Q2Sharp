@@ -558,10 +558,10 @@ namespace Q2Sharp.Client
             while (key_lines[edit_line][end] != 0)
                 end++;
             string s = Encoding.ASCII.GetString(key_lines[edit_line], start, end - start);
-            Vector cmds = Cmd.CompleteCommand(s);
-            Vector vars = Cvar.CompleteVariable(s);
-            int c = cmds.Size();
-            int v = vars.Size();
+            var cmds = Cmd.CompleteCommand(s);
+            var vars = Cvar.CompleteVariable(s);
+            int c = cmds.Count;
+            int v = vars.Count;
             if ((c + v) > 1)
             {
                 if (c > 0)
@@ -572,11 +572,11 @@ namespace Q2Sharp.Client
             }
             else if (c == 1)
             {
-                s = (string)cmds.Get(0);
+                s = (string)cmds[0];
             }
             else if (v == 1)
             {
-                s = (string)vars.Get(0);
+                s = (string)vars[0];
             }
             else
                 return;
