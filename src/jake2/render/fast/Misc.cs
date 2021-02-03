@@ -10,6 +10,7 @@ using J2N.Text;
 using J2N.IO;
 using System.IO;
 using System.Drawing;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace Q2Sharp.Render.Fast
 {
@@ -142,7 +143,7 @@ namespace Q2Sharp.Render.Fast
                 gl_swapinterval.modified = false;
                 if (!gl_state.stereo_enabled)
                 {
-                    gl.SetSwapInterval((int)gl_swapinterval.value);
+                    GLFW.SwapInterval((int)gl_swapinterval.value);
                 }
             }
         }

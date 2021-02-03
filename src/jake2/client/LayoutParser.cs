@@ -116,7 +116,7 @@ namespace Q2Sharp.Client
         {
             if (tokenLength != other.Length)
                 return false;
-            return data.RegionMatches(tokenPos, other, 0, tokenLength);
+            return data.Substring(tokenPos, tokenLength).Equals(other.Substring(0, tokenLength));
         }
 
         public int TokenAsInt()

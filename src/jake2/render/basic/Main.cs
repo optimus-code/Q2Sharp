@@ -1042,7 +1042,7 @@ namespace Q2Sharp.Render.Basic
 			Draw_InitLocal();
 			ErrorCode err = GL.GetError();
 			if ( err != ErrorCode.NoError )
-				VID.Printf( Defines.PRINT_ALL, "glGetError() = 0x%x\\n\\t%s\\n", err, "" + GL.GetString( err ) );
+				VID.Printf( Defines.PRINT_ALL, "glGetError() = 0x%x\\n\\t%s\\n", err, "" + Enum.GetName( typeof(ErrorCode), err ) );
 			return true;
 		}
 

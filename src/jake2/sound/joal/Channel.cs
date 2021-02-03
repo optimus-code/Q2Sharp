@@ -168,25 +168,25 @@ namespace Q2Sharp.Sound.Joal
             if (interupted)
             {
                 UnqueueStreams();
-                buffer[0] = buffers[Sound.MAX_SFX + streamQueue++];
+                buffer[0] = buffers[JOALSoundImpl.MAX_SFX + streamQueue++];
                 Com.DPrintf("queue " + (streamQueue - 1) + '\\');
             }
             else if (processed < 2)
             {
-                if (streamQueue >= Sound.STREAM_QUEUE)
+                if (streamQueue >= JOALSoundImpl.STREAM_QUEUE)
                     return;
-                buffer[0] = buffers[Sound.MAX_SFX + streamQueue++];
+                buffer[0] = buffers[JOALSoundImpl.MAX_SFX + streamQueue++];
                 Com.DPrintf("queue " + (streamQueue - 1) + '\\');
             }
             else
             {
-                AL.SourceUnqueueBuffers(source, 1, buffer, 0);
+                AL.SourceUnqueueBuffers(source, 1, buffer);
             }
 
             samples.Position = 0;
             samples.Limit = count;
-            AL.BufferData(buffer[0], format, samples, count, rate);
-            AL.SourceQueueBuffers(source, 1, buffer, 0);
+            AL.BufferData(buffer[0], format, ref samples.Array[0], count, rate);
+            AL.SourceQueueBuffers(source, 1, buffer);
             if (streamQueue > 1 && !playing)
             {
                 Com.DPrintf("start sound\\n");

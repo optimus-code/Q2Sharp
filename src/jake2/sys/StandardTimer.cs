@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -10,16 +11,16 @@ namespace Q2Sharp.Sys
         private long base_renamed;
         public StandardTimer( )
         {
-            base_renamed = System.CurrentTimeMillis();
+            base_renamed = 1000 * Stopwatch.GetTimestamp() / Stopwatch.Frequency;
         }
 
         public override long CurrentTimeMillis()
         {
-            long time = System.CurrentTimeMillis();
+            long time = 1000 * Stopwatch.GetTimestamp() / Stopwatch.Frequency;
             long delta = time - base_renamed;
             if (delta < 0)
             {
-                delta += long.MaxValue + 1;
+                delta += unchecked(long.MaxValue + 1);
             }
 
             return delta;

@@ -74,7 +74,6 @@ namespace Q2Sharp.Render
         public virtual void SetGLDriver( IGLDriver driver )
         {
             glImpl = driver;
-            gl = (QGL)driver;
         }
 
         public static void SetVid(int width, int height)
